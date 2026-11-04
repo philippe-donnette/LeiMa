@@ -1,0 +1,17 @@
+bin/
+obj/
+*.user
+.vs/
+.idea/
+.vscode/*
+!.vscode/extensions.json
+node_modules/
+dist/
+coverage/
+TestResults/
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+*.log
+.claude/settings.local.json
