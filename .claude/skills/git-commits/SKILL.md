@@ -11,10 +11,9 @@ Whenever committing, branching, or opening a PR (only when the user asks).
 ## Conventions
 - Commit format: `type: <ID> - <summary>`, e.g. `feat: 12345 - add retry policy to task orchestrator`.
   - Types: feat, fix, refactor, test, docs, chore, build, ci, perf.
-  - `<ID>` is the numeric ID of the user story, task or feature the change belongs to. It is required.
+  - `<ID>` is the GitHub issue number of the story, task, feature or bug the change belongs to (see `github-workflow`). It is required.
   - Summary in imperative mood, ≤ 72 chars total subject, no trailing period. Body (optional) explains why and may mention the service.
   - If the ID is unknown, ask the user instead of guessing. Repo chores with no work item: `chore: 0 - <summary>`.
-  - Story IDs match the file name in `docs/user-stories/` (see `user-stories`).
 - Breaking changes: `type!: <ID> - <summary>` and a `BREAKING CHANGE:` footer.
 - Branches: `<type>/<ID>-<short-kebab-description>`, e.g. `feat/12345-provider-credentials`.
 - Small, atomic commits; one logical change each. Don't mix formatting with behavior.
@@ -24,7 +23,8 @@ Whenever committing, branching, or opening a PR (only when the user asks).
 ## PR description template
 ```
 Title: type: <ID> - summary
-## Work items (IDs)
+## Work items
+Closes #<ID>   (or Refs #<ID> when the PR doesn't finish the item)
 ## What
 ## Why
 ## How to test
@@ -38,5 +38,5 @@ Title: type: <ID> - summary
 
 ## Don'ts
 - No force-push to shared branches, no `--no-verify`.
-- No commits unless the user asked for them.
+- No commits unless the user asked for them, and not before the user has reviewed the changes: leave them uncommitted, show what changed, and commit only after approval. The same goes for pushes and PRs.
 - No co-author trailers or AI-generated footers, ever.

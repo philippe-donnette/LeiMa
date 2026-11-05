@@ -1,0 +1,3 @@
+# Default owner for everything. Add per-service paths when services are created,
+# e.g. /services/task-orchestrator/ @philippe-donnette
+* @philippe-donnette

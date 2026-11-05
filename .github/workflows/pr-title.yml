@@ -1,0 +1,35 @@
+name: PR title
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-title:
+    # Dependabot titles and branches follow their own format.
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    env:
+      TITLE: ${{ github.event.pull_request.title }}
+      BRANCH: ${{ github.head_ref }}
+    steps:
+      - name: Validate PR title and branch name
+        shell: bash
+        run: |
+          types='feat|fix|refactor|test|docs|chore|build|ci|perf'
+          title_re="^(${types})!?: [0-9]+ - .+$"
+          branch_re="^(${types})/[0-9]+-[a-z0-9][a-z0-9-]*$"
+          ok=true
+
+          if ! [[ "$TITLE" =~ $title_re ]] || [ "${#TITLE}" -gt 72 ]; then
+            echo "::error::PR title must look like 'type: <issue number> - summary' (max 72 chars), e.g. 'feat: 12 - add retry policy'. Got: $TITLE"
+            ok=false
+          fi
+          if ! [[ "$BRANCH" =~ $branch_re ]]; then
+            echo "::error::Branch must look like 'type/<issue number>-short-slug', e.g. 'feat/12-retry-policy'. Got: $BRANCH"
+            ok=false
+          fi
+          [ "$ok" = true ]
