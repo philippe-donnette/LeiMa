@@ -9,7 +9,7 @@ description: How LeiMa plans and tracks work on GitHub (public Project "LeiMa", 
 Creating or refining features, stories, tasks, bugs, spikes or chores; planning or reviewing a sprint; linking commits and PRs to work items.
 
 ## Conventions
-- **The Project "LeiMa" is the planning hub** (public, owned by `philippe-donnette`): backlog, sprint planning, sprint board, roadmap. Create and sort work there.
+- **The Project "LeiMa" is the planning hub** (public, owned by the repository owner): backlog, sprint planning, sprint board, roadmap. Create and sort work there.
 - **Every work item is a real issue.** The issue number is the work item ID used in commits, branches and PRs (see `git-commits`). Draft project items are for brainstorming only; convert them to issues before work starts.
 - **Types** (no native Issue Types on a personal account): Project field `Issue type` (Feature, Story, Task, Bug, Spike, Chore) plus the matching label `type:feature|story|task|bug|spike|chore|adr`. Set both when creating.
 - **Hierarchy** with native sub-issues: Feature → Story → Task. Bugs and spikes stand alone or sit under a feature.
@@ -47,19 +47,43 @@ Creating or refining features, stories, tasks, bugs, spikes or chores; planning 
 - One PR per issue where practical; PRs of a story reference the story, not each task.
 
 ## gh recipes
+Run from a clone of the repo. Owner, repo and Project number are derived, never hard-coded in docs or scripts:
+```bash
+GH_OWNER=$(gh repo view --json owner -q .owner.login)
+GH_REPO=$(gh repo view --json name -q .name)
+GH_PROJECT=$(gh project list --owner "$GH_OWNER" --format json -q '.projects[] | select(.title=="LeiMa") | .number')
+```
 ```bash
 # create an issue directly in the Project
 gh issue create --title "..." --body-file body.md --label "type:story,svc:platform" --project "LeiMa"
 
 # make #<child> a sub-issue of #<parent> (needs the child's database id, not its number)
-child_id=$(gh api repos/philippe-donnette/LeiMa/issues/<child> --jq .id)
-gh api repos/philippe-donnette/LeiMa/issues/<parent>/sub_issues -F sub_issue_id=$child_id
+child_id=$(gh api "repos/$GH_OWNER/$GH_REPO/issues/<child>" --jq .id)
+gh api "repos/$GH_OWNER/$GH_REPO/issues/<parent>/sub_issues" -F sub_issue_id=$child_id
 
 # list the Project's items and fields
-gh project item-list <project-number> --owner philippe-donnette
-gh project field-list <project-number> --owner philippe-donnette
+gh project item-list "$GH_PROJECT" --owner "$GH_OWNER"
+gh project field-list "$GH_PROJECT" --owner "$GH_OWNER"
 ```
-Setting Project fields on an item uses `gh project item-edit` with project, item and field ids from `item-list`/`field-list`.
+### Setting Project fields on an item
+`gh project item-edit` needs ids, not names. Single-select fields (Status, Issue type, Priority, Size, Service) take the option id; get all ids from JSON output:
+```bash
+# project id (PVT_...)
+gh project view "$GH_PROJECT" --owner "$GH_OWNER" --format json -q .id
+
+# item id (PVTI_...): printed by item-add, or found in item-list
+gh project item-add "$GH_PROJECT" --owner "$GH_OWNER" --url <issue-url> --format json -q .id
+gh project item-list "$GH_PROJECT" --owner "$GH_OWNER" --format json
+
+# field ids and option ids
+gh project field-list "$GH_PROJECT" --owner "$GH_OWNER" --format json \
+  -q '.fields[] | select(.type!="ProjectV2Field") | "\(.name) \(.id) " + ([.options[]? | "\(.name)=\(.id)"] | join(" "))'
+
+# set one single-select field
+gh project item-edit --id <item-id> --project-id <project-id> \
+  --field-id <field-id> --single-select-option-id <option-id>
+```
+Iteration fields (Sprint) use `--iteration-id`; ids come from `field-list` too. Ids change if a field's options are recreated, so look them up again rather than reusing old ones.
 
 ## Don'ts
 - No work without an issue (apart from `chore: 0` housekeeping agreed with the user).
