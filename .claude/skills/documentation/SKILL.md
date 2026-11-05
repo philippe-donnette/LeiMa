@@ -11,9 +11,14 @@ Adding/changing services, making architectural decisions, or any change that mak
 ## Conventions
 - **Root `CLAUDE.md`**: repo map, services table, stack, cross-cutting rules. Update it whenever those change.
 - **`services/<name>/CLAUDE.md`**: from `services/_template/CLAUDE.md`; purpose, API/events, data, run/test, gotchas.
-- **ADRs** in `docs/adr/NNNN-kebab-title.md` from `0000-template.md` for significant, hard-to-reverse decisions (broker choice, auth model, etc.). Never rewrite accepted ADRs; supersede them.
+- **ADRs** in `docs/adr/NNNN-kebab-title.md` (MADR format, from `0000-template.md`) for significant, hard-to-reverse decisions (broker choice, auth model, etc.):
+  - One decision per ADR, one or two pages, state the decision drivers and the options considered.
+  - Process: issue first, then a PR labelled `type:adr`; discussion happens on the PR; merging accepts it (status `accepted`).
+  - Statuses: `proposed`, `accepted`, `rejected`, `deprecated`, `superseded by NNNN`.
+  - Accepted ADRs are immutable except the status line; to change a decision write a new ADR that supersedes it and update both statuses.
+  - Add every ADR to the index in `docs/adr/README.md`.
 - **Architecture** overview and diagrams in `docs/architecture/`.
-- **User stories** in `docs/user-stories/` (see `user-stories`).
+- **User stories** live in GitHub issues (see `user-stories`, `github-workflow`); `docs/user-stories/` holds the template and optional long-form detail.
 - READMEs: what it is, how to run, how to test; no duplication of CLAUDE.md content, link instead.
 - Code docs: XML doc comments on public APIs of shared contracts; TSDoc for exported frontend utilities; comment the *why*, not the *what*.
 - Keep CLAUDE.md files concise; facts verified against the code.
@@ -25,4 +30,4 @@ Adding/changing services, making architectural decisions, or any change that mak
 
 ## Don'ts
 - No stale docs left behind; delete or fix.
-- No secrets or environment-specific values in docs.
+- No secrets or environment-specific values in docs. The repository is public: nothing internal, no credentials, no customer data.

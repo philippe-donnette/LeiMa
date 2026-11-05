@@ -39,6 +39,12 @@ _None yet. Services are added step by step._ Keep this list current:
 - Authorization is enforced server-side in every service.
 - Commits and PRs carry no AI attribution (no `Co-Authored-By`, no Anthropic email, no "Generated with" footer); see `git-commits`.
 
+## Work tracking (GitHub)
+- Repo and the Project "LeiMa" are **public**: no secrets, credentials, customer data or internal URLs in code, issues, PRs or docs.
+- Plan work in the GitHub Project "LeiMa" (backlog, 2-week sprints, board). Features, stories, tasks, bugs are issues; the **issue number is the work item ID** in commits (`type: <ID> - summary`), branches (`type/<ID>-slug`) and PR titles. PR bodies use `Closes #<ID>`.
+- Significant decisions are ADRs in `docs/adr/` (MADR, proposed by PR).
+- Never commit, push, open PRs or change GitHub settings until the user has reviewed the changes. Details in `github-workflow` and `git-commits`.
+
 ## Skills (use them when the task matches)
 | Skill | Use for |
 |---|---|
@@ -49,8 +55,9 @@ _None yet. Services are added step by step._ Keep this list current:
 | `testing` | writing/running tests |
 | `code-review` | reviewing changes |
 | `git-commits` | commits, branches, PRs |
+| `github-workflow` | issues, Project board, sprints, labels, definition of ready/done |
 | `documentation` | READMEs, ADRs, CLAUDE.md upkeep |
-| `user-stories` | writing stories and acceptance criteria |
+| `user-stories` | writing stories (as issues) and acceptance criteria |
 
 ## Maintaining this file
 Update this CLAUDE.md in the same change whenever a service is added/removed/renamed, a stack decision changes, or a new cross-cutting convention is agreed. Keep it concise; service-specific detail belongs in `services/<name>/CLAUDE.md` (copy from `services/_template/CLAUDE.md`).
