@@ -11,9 +11,9 @@ Creating or refining features, stories, tasks, bugs, spikes or chores; planning 
 ## Conventions
 - **The Project "LeiMa" is the planning hub** (public, owned by `philippe-donnette`): backlog, sprint planning, sprint board, roadmap. Create and sort work there.
 - **Every work item is a real issue.** The issue number is the work item ID used in commits, branches and PRs (see `git-commits`). Draft project items are for brainstorming only; convert them to issues before work starts.
-- **Types** (no native Issue Types on a personal account): Project field `Type` (Feature, Story, Task, Bug, Spike, Chore) plus the matching label `type:feature|story|task|bug|spike|chore|adr`. Set both when creating.
+- **Types** (no native Issue Types on a personal account): Project field `Issue type` (Feature, Story, Task, Bug, Spike, Chore) plus the matching label `type:feature|story|task|bug|spike|chore|adr`. Set both when creating.
 - **Hierarchy** with native sub-issues: Feature → Story → Task. Bugs and spikes stand alone or sit under a feature.
-- **Project fields**: Status (Backlog, Ready, In progress, In review, Done), Type, Sprint (2-week iteration), Priority (P0–P3), Size (XS–XL), Service. Priority, status and size live in the Project, not in labels.
+- **Project fields**: Status (Backlog, Todo, In progress, To be reviewed, In review, Reviewed, Done), Issue type, Sprint (2-week iteration), Priority (P0–P3), Size (XS–XL), Service (platform, web; add an option per new service). Priority, status and size live in the Project, not in labels.
 - **Labels**: `type:*`, `svc:<service>` (one per service, plus `svc:platform`), `area:web|docs|infra`.
 - **Public repository and Project**: no secrets, provider credentials, customer data or internal URLs in issues, comments, screenshots or logs.
 
@@ -37,9 +37,9 @@ Creating or refining features, stories, tasks, bugs, spikes or chores; planning 
 - [ ] Item moved to Done (automatic on merge/close)
 
 ## Sprint rhythm (2 weeks)
-- **Planning**: pull Ready items into the next sprint, sized to capacity; sprint goal in one sentence.
-- **During**: Status moves Ready → In progress (branch created) → In review (PR opened) → Done (PR merged).
-- **Weekly triage**: items without Status, Type or Size.
+- **Planning**: items that meet the definition of ready move from Backlog to Todo and into the next sprint, sized to capacity; sprint goal in one sentence.
+- **During**: Status moves Todo → In progress (branch created) → To be reviewed (PR opened, waiting for a reviewer) → In review (reviewer has started) → Reviewed (review finished) → Done (PR merged). If the review is rejected, Reviewed goes back to In progress for rework, then To be reviewed again.
+- **Weekly triage**: items without Status, Issue type or Size.
 - **End**: move unfinished items to the next sprint, write a short retro note.
 
 ## Linking work

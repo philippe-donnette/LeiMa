@@ -9,7 +9,7 @@ description: Format and process for writing LeiMa user stories with acceptance c
 Capturing a feature request or requirement before implementation.
 
 ## Conventions
-- Stories live in **GitHub issues** (label `type:story`, Project field Type = Story), created from the Project "LeiMa" (see `github-workflow`). The issue body follows `docs/user-stories/_template.md`.
+- Stories live in **GitHub issues** (label `type:story`, Project field Issue type = Story), created from the Project "LeiMa" (see `github-workflow`). The issue body follows `docs/user-stories/_template.md`.
 - ID: the GitHub issue number; unique and never reused. Stories, tasks, features and bugs share the same number space. The ID is cited in commits, branches and PRs (see `git-commits`).
 - Stories belong to a Feature (parent issue) and break down into Tasks (sub-issues).
 - Files under `docs/user-stories/<service>/<id>-<kebab-slug>.md` are optional, only for stories that need long-lived written detail; they link to the issue and never replace it.
