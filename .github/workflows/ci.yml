@@ -35,7 +35,7 @@ jobs:
           echo "dotnet solutions: ${dotnet:-none}"
           echo "node apps: ${node:-none}"
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         if: steps.detect.outputs.has_dotnet == 'true'
         with:
           dotnet-version: 10.0.x
