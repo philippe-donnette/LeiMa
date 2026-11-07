@@ -1,6 +1,6 @@
 # 0002. Share cross-cutting infrastructure through LeiMa.Common NuGet packages
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-07
 - Deciders: project maintainers
 - Related: issues #9, #10, #11, [0001](0001-record-architecture-decisions.md)

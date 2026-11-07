@@ -29,7 +29,7 @@ _None yet. Services are added step by step._ Keep this list current:
 - .NET 10 / ASP.NET Core, C#
 - EF Core + PostgreSQL, one database per service
 - React + TypeScript (Vite), Tailwind CSS with the shared `web/packages/ui` design system (`@leima/ui`)
-- Shared infrastructure for .NET services: `LeiMa.Common` NuGet packages in `libs/dotnet/LeiMa.Common` (ADR 0002, proposed)
+- Shared infrastructure for .NET services: `LeiMa.Common` NuGet packages in `libs/dotnet/LeiMa.Common` (ADR 0002, accepted)
 - Message broker for task orchestration: TBD (ADR)
 
 ## Cross-cutting conventions
