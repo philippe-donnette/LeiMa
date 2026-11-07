@@ -12,6 +12,7 @@ LeiMa is a suite of microservices to **administer, monitor, manage permissions, 
 ```
 services/<name>/   one folder per microservice, each with its own CLAUDE.md
 services/_template per-service CLAUDE.md template (not a service)
+libs/dotnet/       shared .NET libraries, e.g. LeiMa.Common (NuGet packages, see below)
 web/               React frontends
 docs/              architecture/, adr/, user-stories/
 tools/             scripts
@@ -28,10 +29,12 @@ _None yet. Services are added step by step._ Keep this list current:
 - .NET 10 / ASP.NET Core, C#
 - EF Core + PostgreSQL, one database per service
 - React + TypeScript (Vite), Tailwind CSS with the shared `web/packages/ui` design system (`@leima/ui`)
+- Shared infrastructure for .NET services: `LeiMa.Common` NuGet packages in `libs/dotnet/LeiMa.Common` (ADR 0002, proposed)
 - Message broker for task orchestration: TBD (ADR)
 
 ## Cross-cutting conventions
 - Services are independent: no shared database, no shared domain code; communicate via HTTP APIs or events.
+- Only exception: cross-cutting infrastructure (logging, telemetry, errors, health, auth wiring, EF conventions, test fixtures) comes from the `LeiMa.Common*` NuGet packages. Domain models, business logic and API/event contracts never go in shared packages. Use the packages; do not re-implement their features in a service.
 - Long-running tasks must be idempotent, cancellable (`CancellationToken`) and resumable.
 - Calls to providers need timeouts, retries with backoff, and rate-limit awareness.
 - Secrets never in git; use environment variables / user-secrets / secret store.

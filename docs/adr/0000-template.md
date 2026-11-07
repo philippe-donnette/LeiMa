@@ -37,7 +37,8 @@ Chosen option: "Option X", because <justification tied to the drivers>.
 <!--
 Rules (see the `documentation` skill):
 - One decision per ADR. Keep it to one or two pages.
-- Proposed in a PR with label type:adr; merging the PR accepts it.
+- Proposed in a PR with label type:adr. When agreed, set Status to accepted
+  (and the date) in a last commit of the same PR, before merging.
 - Accepted ADRs are immutable except the Status line. To change a decision,
   write a new ADR that supersedes the old one and update both statuses.
 - Public repository: no secrets, credentials or internal URLs.
