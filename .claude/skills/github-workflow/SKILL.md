@@ -13,8 +13,8 @@ Creating or refining features, stories, tasks, bugs, spikes or chores; planning 
 - **Every work item is a real issue.** The issue number is the work item ID used in commits, branches and PRs (see `git-commits`). Draft project items are for brainstorming only; convert them to issues before work starts.
 - **Types** (no native Issue Types on a personal account): Project field `Issue type` (Feature, Story, Task, Bug, Spike, Chore) plus the matching label `type:feature|story|task|bug|spike|chore|adr`. Set both when creating.
 - **Hierarchy** with native sub-issues: Feature → Story → Task. Bugs and spikes stand alone or sit under a feature.
-- **Project fields**: Status (Backlog, Todo, In progress, To be reviewed, In review, Reviewed, Done), Issue type, Sprint (2-week iteration), Priority (P0–P3), Size (XS–XL), Service (platform, web; add an option per new service). Priority, status and size live in the Project, not in labels.
-- **Labels**: `type:*`, `svc:<service>` (one per service, plus `svc:platform`), `area:web|docs|infra`.
+- **Project fields**: Status (Backlog, Todo, In progress, To be reviewed, In review, Reviewed, Done), Issue type, Sprint (2-week iteration), Priority (P0–P3), Size (XS–XL), Service (platform, web, common; add an option per new service). Priority, status and size live in the Project, not in labels.
+- **Labels**: `type:*`, `svc:<service>` (one per service, plus `svc:platform` and `svc:common` for the shared packages), `area:web|docs|infra`.
 - **Public repository and Project**: no secrets, provider credentials, customer data or internal URLs in issues, comments, screenshots or logs.
 
 ## Writing items

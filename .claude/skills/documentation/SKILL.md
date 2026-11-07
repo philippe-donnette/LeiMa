@@ -13,7 +13,7 @@ Adding/changing services, making architectural decisions, or any change that mak
 - **`services/<name>/CLAUDE.md`**: from `services/_template/CLAUDE.md`; purpose, API/events, data, run/test, gotchas.
 - **ADRs** in `docs/adr/NNNN-kebab-title.md` (MADR format, from `0000-template.md`) for significant, hard-to-reverse decisions (broker choice, auth model, etc.):
   - One decision per ADR, one or two pages, state the decision drivers and the options considered.
-  - Process: issue first, then a PR labelled `type:adr`; discussion happens on the PR; merging accepts it (status `accepted`).
+  - Process: issue first, then a PR labelled `type:adr`; the ADR starts as `proposed` and is discussed on the PR. Once agreed, set the status to `accepted` (and the date) in a last commit of the same PR, then merge, so no follow-up edit is needed after the merge.
   - Statuses: `proposed`, `accepted`, `rejected`, `deprecated`, `superseded by NNNN`.
   - Accepted ADRs are immutable except the status line; to change a decision write a new ADR that supersedes it and update both statuses.
   - Add every ADR to the index in `docs/adr/README.md`.
