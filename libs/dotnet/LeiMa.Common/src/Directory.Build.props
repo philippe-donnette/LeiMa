@@ -1,0 +1,26 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <!-- Package metadata. The repository URL is derived from the CI environment, never hard-coded. -->
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Authors>LeiMa</Authors>
+    <Description>Cross-cutting infrastructure for LeiMa .NET services.</Description>
+    <PackageTags>leima;infrastructure</PackageTags>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(GITHUB_REPOSITORY)' != ''">
+    <RepositoryUrl>https://github.com/$(GITHUB_REPOSITORY)</RepositoryUrl>
+  </PropertyGroup>
+
+  <!-- Each package gives its same-named .Tests project access to internals. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="$(MSBuildProjectName).Tests" />
+  </ItemGroup>
+
+</Project>

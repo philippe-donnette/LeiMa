@@ -9,6 +9,15 @@ updates:
     labels:
       - "area:infra"
 
+  - package-ecosystem: nuget
+    directory: /libs/dotnet/LeiMa.Common
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "build"
+    labels:
+      - "svc:common"
+
 # Add one entry per service / app when it is created (Dependabot errors on
 # directories without a manifest), e.g.:
 #

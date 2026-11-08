@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>EF Core and PostgreSQL conventions for LeiMa services: UTC timestamps, concurrency tokens, audit interceptors.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LeiMa.Common\LeiMa.Common.csproj" />
+  </ItemGroup>
+
+</Project>

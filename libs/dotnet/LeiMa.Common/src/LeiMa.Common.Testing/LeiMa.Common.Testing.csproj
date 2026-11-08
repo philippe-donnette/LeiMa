@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>Test helpers for LeiMa services: web application factory base, PostgreSQL test container fixture, fake clock.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LeiMa.Common\LeiMa.Common.csproj" />
+  </ItemGroup>
+
+</Project>

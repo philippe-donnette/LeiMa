@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LeiMa.Common/LeiMa.Common.csproj" />
+    <Project Path="src/LeiMa.Common.AspNetCore/LeiMa.Common.AspNetCore.csproj" />
+    <Project Path="src/LeiMa.Common.EntityFrameworkCore/LeiMa.Common.EntityFrameworkCore.csproj" />
+    <Project Path="src/LeiMa.Common.Testing/LeiMa.Common.Testing.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LeiMa.Common.Tests/LeiMa.Common.Tests.csproj" />
+    <Project Path="tests/LeiMa.Common.AspNetCore.Tests/LeiMa.Common.AspNetCore.Tests.csproj" />
+    <Project Path="tests/LeiMa.Common.EntityFrameworkCore.Tests/LeiMa.Common.EntityFrameworkCore.Tests.csproj" />
+  </Folder>
+</Solution>
