@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>ASP.NET Core defaults for LeiMa services: logging and telemetry, ProblemDetails, correlation ids, health checks, auth wiring.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LeiMa.Common\LeiMa.Common.csproj" />
+  </ItemGroup>
+
+</Project>

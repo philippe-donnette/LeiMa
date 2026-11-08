@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>Core types shared by LeiMa .NET services: results and errors, time and id helpers. No heavy dependencies.</Description>
+  </PropertyGroup>
+
+</Project>

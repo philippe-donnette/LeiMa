@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   # Single, always-running job so it can be a required status check.
-  # It discovers projects, so it passes trivially until the first service exists.
+  # It discovers .NET solutions under services/ and libs/ and web apps under web/.
   ci:
     runs-on: ubuntu-latest
     steps:
@@ -24,7 +24,7 @@ jobs:
         id: detect
         shell: bash
         run: |
-          dotnet=$(find services -mindepth 2 -maxdepth 4 \( -name '*.sln' -o -name '*.slnx' \) 2>/dev/null | sort || true)
+          dotnet=$(find services libs -mindepth 2 -maxdepth 4 \( -name '*.sln' -o -name '*.slnx' \) 2>/dev/null | sort || true)
           node=$(find web -mindepth 2 -maxdepth 3 -name package.json -not -path '*/node_modules/*' 2>/dev/null | sort || true)
           {
             echo "has_dotnet=$([ -n "$dotnet" ] && echo true || echo false)"
