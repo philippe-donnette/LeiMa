@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\LeiMa.Common\LeiMa.Common.csproj" />
   </ItemGroup>
 

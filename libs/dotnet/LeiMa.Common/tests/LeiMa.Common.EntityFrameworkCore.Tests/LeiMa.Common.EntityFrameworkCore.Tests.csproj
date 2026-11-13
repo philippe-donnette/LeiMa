@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\LeiMa.Common.EntityFrameworkCore\LeiMa.Common.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\..\src\LeiMa.Common.Testing\LeiMa.Common.Testing.csproj" />
   </ItemGroup>
 
 </Project>
