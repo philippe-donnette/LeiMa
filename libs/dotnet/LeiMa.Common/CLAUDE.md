@@ -10,7 +10,7 @@ Shared NuGet packages with cross-cutting infrastructure for all LeiMa .NET servi
 | `LeiMa.Common.EntityFrameworkCore` | UTC timestamps, concurrency tokens, audit interceptor, configuration helpers | EF Core, Npgsql |
 | `LeiMa.Common.Testing` | Web application factory base, PostgreSQL test container fixture, fake clock | xUnit, Testcontainers |
 
-Current state: `LeiMa.Common` and `LeiMa.Common.AspNetCore` are implemented (tasks #13, #14). `.EntityFrameworkCore` and `.Testing` are still scaffolds (tasks #15, #16). Publishing comes with task #17.
+Current state: all four packages are implemented (tasks #13 to #16). Publishing comes with task #17.
 
 ## Using LeiMa.Common
 `Result` / `Result<T>` / `Error` (typed by `ErrorType`) for expected failures; `Ids.NewId()` for time-ordered GUIDs (version 7); inject `TimeProvider` instead of `DateTime.UtcNow`; `CorrelationConstants` for the correlation header and log property.
@@ -35,6 +35,25 @@ app.Run();
 - Authorization is deny-by-default once `AddLeiMaAuthorization` is used: endpoints need an authenticated user unless marked `AllowAnonymous`.
 - Options: `services.AddValidatedOptions<T>(configuration, "Section")` validates data annotations and fails the startup on invalid configuration.
 
+## Using LeiMa.Common.EntityFrameworkCore
+```csharp
+services.AddLeiMaEntityFrameworkCore();   // audit interceptor (+ TimeProvider.System if none registered)
+services.AddDbContext<MyDbContext>((sp, o) => o.UseLeiMaNpgsql(sp, connectionString));   // retries on transient failures
+
+// in the DbContext
+protected override void ConfigureConventions(ModelConfigurationBuilder c) => c.UseLeiMaConventions();
+// in an entity configuration
+entity.UseXminConcurrencyToken();   // optimistic concurrency via PostgreSQL xmin (shadow property)
+entity.HasAuditTimestamps();        // CreatedAt / UpdatedAt, filled on save from the injected TimeProvider
+```
+- `UseLeiMaConventions` stores every `DateTime` / `DateTimeOffset` as `timestamptz` in UTC; reads return `DateTimeKind.Utc`, unspecified values are treated as UTC.
+- `HasAuditTimestamps` adds `DateTimeOffset` shadow properties unless the entity declares `CreatedAt` / `UpdatedAt` itself (`DateTime` or `DateTimeOffset`). `CreatedAt` is never changed on update.
+
+## Using LeiMa.Common.Testing
+- `PostgreSqlFixture` (`IClassFixture`) starts one `postgres:17-alpine` container per test class; `CreateDatabaseAsync()` returns the connection string of a fresh, isolated database.
+- Mark tests that need Docker with `[RequiresDockerFact]`: skipped when Docker is not running locally, but they fail on CI (`CI` / `GITHUB_ACTIONS` set), so CI never silently skips them.
+- `LeiMaWebApplicationFactory<Program>`: runs the service in the `Testing` environment, exposes `Clock` (a `FakeTimeProvider` registered as the `TimeProvider`) and `WithSetting(key, value)` for configuration overrides.
+
 ## Scope rule
 Only cross-cutting infrastructure belongs here. If it contains a domain concept, an API or event contract, or business logic, it does not belong in these packages. Deferred until a service needs it: background-task base class, provider-call resilience defaults.
 
@@ -46,7 +65,7 @@ Directory.Packages.props     # central package versions
 src/<Package>/               # packable; src/Directory.Build.props holds package metadata
 tests/<Package>.Tests/       # xUnit; same-named test project sees internals
 ```
-`LeiMa.Common.Testing` has no test project of its own; its fixtures are exercised by the other test projects.
+`LeiMa.Common.Testing` has no test project of its own; `PostgreSqlFixture` is exercised by the EF Core tests. `LeiMaWebApplicationFactory` needs a real service entry point, so it is first exercised by the first service that uses it.
 
 ## Commands (run in this folder)
 ```bash
