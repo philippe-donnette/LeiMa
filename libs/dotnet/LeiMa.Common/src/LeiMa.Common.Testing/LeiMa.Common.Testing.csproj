@@ -1,8 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <IsTestProject>false</IsTestProject>
     <Description>Test helpers for LeiMa services: web application factory base, PostgreSQL test container fixture, fake clock.</Description>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="xunit.core" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\LeiMa.Common\LeiMa.Common.csproj" />
