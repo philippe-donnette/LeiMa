@@ -13,7 +13,13 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <!-- Each package folder has a README.md that ships inside the package. -->
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
   <PropertyGroup Condition="'$(GITHUB_REPOSITORY)' != ''">
     <RepositoryUrl>https://github.com/$(GITHUB_REPOSITORY)</RepositoryUrl>
   </PropertyGroup>
