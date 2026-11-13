@@ -63,6 +63,7 @@ LeiMa.Common.slnx
 Directory.Build.props        # shared settings (net10.0, nullable, warnings as errors)
 Directory.Packages.props     # central package versions
 src/<Package>/               # packable; src/Directory.Build.props holds package metadata
+src/<Package>/README.md      # shown on the package page; packed automatically, keep it short
 tests/<Package>.Tests/       # xUnit; same-named test project sees internals
 ```
 `LeiMa.Common.Testing` has no test project of its own; `PostgreSqlFixture` is exercised by the EF Core tests. `LeiMaWebApplicationFactory` needs a real service entry point, so it is first exercised by the first service that uses it.
