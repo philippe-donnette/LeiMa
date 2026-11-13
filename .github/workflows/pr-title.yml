@@ -9,8 +9,10 @@ permissions:
 
 jobs:
   pr-title:
-    # Dependabot titles and branches follow their own format.
-    if: github.actor != 'dependabot[bot]'
+    # Dependabot titles and branches follow their own format. Check the PR author, not
+    # github.actor: the actor is whoever pushed last, so a human merging main into a
+    # Dependabot branch would otherwise trigger the check.
+    if: github.event.pull_request.user.login != 'dependabot[bot]' && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     env:
       TITLE: ${{ github.event.pull_request.title }}
