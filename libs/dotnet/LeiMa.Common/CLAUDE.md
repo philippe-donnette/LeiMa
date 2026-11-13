@@ -10,7 +10,7 @@ Shared NuGet packages with cross-cutting infrastructure for all LeiMa .NET servi
 | `LeiMa.Common.EntityFrameworkCore` | UTC timestamps, concurrency tokens, audit interceptor, configuration helpers | EF Core, Npgsql |
 | `LeiMa.Common.Testing` | Web application factory base, PostgreSQL test container fixture, fake clock | xUnit, Testcontainers |
 
-Current state: all four packages are implemented (tasks #13 to #16). Publishing comes with task #17.
+Current state: all four packages are implemented (tasks #13 to #16) and the publish workflow exists (task #17); see Releasing and Consuming below.
 
 ## Using LeiMa.Common
 `Result` / `Result<T>` / `Error` (typed by `ErrorType`) for expected failures; `Ids.NewId()` for time-ordered GUIDs (version 7); inject `TimeProvider` instead of `DateTime.UtcNow`; `CorrelationConstants` for the correlation header and log property.
@@ -81,4 +81,31 @@ dotnet pack LeiMa.Common.slnx -c Release -o ./artifacts -p:Version=0.1.0-local
 - Breaking changes need a major version bump and are called out in the commit message and release notes.
 - SourceLink comes from the .NET SDK; the repository URL is derived from `GITHUB_REPOSITORY` in CI, never hard-coded.
 - Changing a package together with a service: pack to a local folder and add it as a temporary NuGet source, or use a temporary `ProjectReference` that is never committed.
-- Publishing and consuming from GitHub Packages is added in task #17.
+
+## Releasing
+Releases are manual, so every version is a deliberate decision (nothing is published on merge). All four packages share one version.
+
+1. GitHub > Actions > **Publish LeiMa.Common** > *Run workflow*, branch `main`. Or from a terminal: `gh workflow run publish-common.yml --ref main -f bump=patch`.
+2. Choose the inputs:
+   - `bump`: `patch`, `minor` or `major`, applied to the latest `common-vX.Y.Z` release (breaking change = `major`). Ignored for the very first release, which uses `VersionPrefix` from `Directory.Build.props` (0.1.0).
+   - `prerelease` (optional): a suffix such as `rc.1`, giving for example `0.2.0-rc.1`. The release is marked as a prerelease.
+   - `dry_run`: build, test and pack only. Use it to check a release before publishing.
+3. The workflow computes the version (`tools/next-common-version.sh`), builds and tests (including the Docker tests), packs, pushes to GitHub Packages (existing versions are skipped, never overwritten) and creates the tag `common-vX.Y.Z` with a GitHub release and generated notes.
+
+It refuses to run from any branch other than `main` or when the computed tag already exists. Published versions cannot be changed: to fix a bad release, publish the next version.
+
+
+## Consuming from a service
+`services/nuget.config` takes `LeiMa.Common*` from GitHub Packages and everything else from nuget.org (package source mapping). Account and token come from environment variables, so nothing account-specific or secret is committed:
+
+| Variable | Value |
+|---|---|
+| `LEIMA_NUGET_OWNER` | the GitHub account that owns the repository |
+| `LEIMA_NUGET_TOKEN` | a personal access token (classic) with `read:packages`; in GitHub Actions use `secrets.GITHUB_TOKEN` |
+
+```bash
+export LEIMA_NUGET_OWNER=<github account>
+export LEIMA_NUGET_TOKEN=<token with read:packages>
+dotnet add package LeiMa.Common.AspNetCore
+```
+GitHub Packages requires a token to restore even when the repository is public. Services' CI jobs must set both variables on the restore step (`LEIMA_NUGET_OWNER: ${{ github.repository_owner }}`, `LEIMA_NUGET_TOKEN: ${{ secrets.GITHUB_TOKEN }}`). Dependabot needs the same feed configured as a registry in `.github/dependabot.yml` when the first service is added.

@@ -1,0 +1,95 @@
+name: Publish LeiMa.Common
+
+# Manual release: Actions tab > "Publish LeiMa.Common" > Run workflow (branch: main).
+# The next version is computed from the latest common-vX.Y.Z tag; the release creates the new tag.
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump from the latest release (ignored for the very first release)
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+      prerelease:
+        description: Optional prerelease suffix, e.g. rc.1 (makes 0.2.0-rc.1)
+        type: string
+        required: false
+      dry_run:
+        description: Build, test and pack only; do not publish or create a release
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # create the tag and the GitHub release
+  packages: write   # push to GitHub Packages
+
+concurrency:
+  group: publish-common
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      SOLUTION: libs/dotnet/LeiMa.Common/LeiMa.Common.slnx
+    steps:
+      - name: Only release from main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Run this workflow on the main branch (selected: $GITHUB_REF_NAME)."
+          exit 1
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # all tags are needed to compute the next version
+
+      - name: Compute version
+        id: version
+        env:
+          BUMP: ${{ inputs.bump }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          version=$(bash tools/next-common-version.sh "$BUMP" "$PRERELEASE")
+          tag="common-v$version"
+          if git rev-parse -q --verify "refs/tags/$tag" > /dev/null; then
+            echo "::error::Tag $tag already exists. Pick another bump or prerelease suffix."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$([[ "$version" == *-* ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "### LeiMa.Common* $version ${{ inputs.dry_run && '(dry run)' || '' }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build and test
+        run: |
+          dotnet restore "$SOLUTION"
+          dotnet build "$SOLUTION" --no-restore -c Release -p:Version=${{ steps.version.outputs.version }}
+          dotnet test "$SOLUTION" --no-build -c Release
+
+      - name: Pack
+        run: dotnet pack "$SOLUTION" --no-build -c Release -o artifacts -p:Version=${{ steps.version.outputs.version }}
+
+      - name: Push to GitHub Packages
+        if: ${{ !inputs.dry_run }}
+        run: |
+          dotnet nuget push "artifacts/*.nupkg" \
+            --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
+            --api-key "${{ secrets.GITHUB_TOKEN }}" \
+            --skip-duplicate
+
+      # Creates the tag on this commit as well.
+      - name: Create GitHub release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          flags=""
+          if [ "${{ steps.version.outputs.prerelease }}" = "true" ]; then flags="--prerelease"; fi
+          gh release create "${{ steps.version.outputs.tag }}" artifacts/*.nupkg artifacts/*.snupkg \
+            --target "$GITHUB_SHA" \
+            --title "LeiMa.Common ${{ steps.version.outputs.version }}" \
+            --generate-notes $flags

@@ -21,7 +21,7 @@ Creating a new service or modifying C# code in `services/<name>/`.
 - AuthN/AuthZ enforced with policies on every endpoint.
 
 ## Shared packages (`LeiMa.Common*`)
-- Reference `LeiMa.Common`, `LeiMa.Common.AspNetCore`, `LeiMa.Common.EntityFrameworkCore` and `LeiMa.Common.Testing` from `libs/dotnet/LeiMa.Common` (published to GitHub Packages; see that folder's `CLAUDE.md`).
+- Reference `LeiMa.Common`, `LeiMa.Common.AspNetCore`, `LeiMa.Common.EntityFrameworkCore` and `LeiMa.Common.Testing` from `libs/dotnet/LeiMa.Common` (published to GitHub Packages; `services/nuget.config` is the feed, set `LEIMA_NUGET_OWNER` and `LEIMA_NUGET_TOKEN` to restore; see that folder's `CLAUDE.md`).
 - Use them for logging and telemetry, ProblemDetails and exception handling, correlation ids, health checks, options validation, auth wiring, EF conventions and test fixtures. Do not re-implement these in a service; if something is missing, add it to the package.
 - Only cross-cutting infrastructure belongs in the packages. Domain models, business logic and API or event contracts stay in the owning service.
 - Pin a package version per service and upgrade deliberately; breaking changes arrive as a major version.
