@@ -43,7 +43,11 @@ Chosen options: **1 and 5**, because they meet the persistence and resume requir
 - A shorter lease recovers faster after a crash but writes more and risks false expiry on a slow moment; a longer lease does the opposite.
 - On graceful shutdown the worker stops polling, releases the lease and leaves the job `Running` with an expired lease. After a crash the lease simply expires.
 - The claim query also takes `Running` jobs whose lease has expired, so interrupted jobs are picked up by any instance, including the same one after a restart. Resume continues from the first task that has not succeeded.
-- A task that was `Running` and has a stored **`executionId`** (returned by the action call) is resumed by polling it again; the action is not called a second time. If no reference was stored yet (crash between sending and saving), the action is called again. Tasks must therefore be idempotent, and Runner sends a stable `Idempotency-Key` header (the task id) so providers can recognise a repeated start.
+- A task that was `Running` and has a stored **`executionId`** (returned by the action call) is resumed by polling it again; the action is not called a second time. If no reference was stored yet (crash between sending and saving), the action is called again. Tasks must therefore be idempotent, and Runner sends an `Idempotency-Key` header so providers can recognise a repeated start.
+- **Idempotency key** = `<taskId>:<run>`. The task has a `run` number that starts at 1 and increases only when a **restart** resets the task. The key is therefore the same for every **retry** of a call, every **resume** after a crash and every takeover by another worker (all the same piece of work), and different after a restart, which is deliberately new work. With the task id alone, a provider would answer a restart with the old, failed execution.
+  - **Retry**: one call failed transiently and is tried again (same key).
+  - **Resume**: a crash or lost lease, another worker continues the job (same key).
+  - **Restart**: the user restarts a stopped or failed job and the task is reset (new run, new key).
 
 Example with a 60 second lease (heartbeat every 20 seconds) and a crash:
 
@@ -61,10 +65,11 @@ sequenceDiagram
 ```
 
 ### Task execution
-- Per task: resolve parameters, call the action endpoint with the JSON parameters, store the execution reference, then poll the status endpoint until the task reports `Succeeded` or `Failed`. On success the output JSON is stored on the task.
+- Per task: resolve parameters, call the action endpoint with the JSON parameters, store the `executionId`, then poll the status endpoint until the task reports `Succeeded` or `Failed`. On success the output JSON is stored on the task.
 - `ITaskProvider` (ADR 0003) gives the action URL, status URL template, polling interval and default timeout per task type; `ITokenProvider` gives the bearer token.
 - **One fixed task API contract**, owned by Runner and published in its documentation (never in a shared package). Every task API must follow it; a provider that does not needs an adapter in front of it.
-  - **Action**: `POST` to the action URL. Body: the resolved task parameters (JSON). Headers: `Authorization: Bearer`, `Idempotency-Key` (the task id) and `X-Correlation-Id`. Success is `200` or `202` with `{ "executionId": "<string>" }`.
+  - **Action**: `POST` to the action URL. Body: the resolved task parameters (JSON). Headers: `Authorization: Bearer`, `Idempotency-Key` (`<taskId>:<run>`) and `X-Correlation-Id`. Success is `200` or `202` with `{ "executionId": "<string>" }`.
+    - The provider must remember each key with its `executionId`. A call with a key it already knows starts nothing and returns the stored `executionId`. The same key with a different body is rejected (`422`). Keys are kept at least as long as the maximum task timeout plus a margin.
   - **Status**: `GET` on the status URL with `{executionId}` substituted. `200` with `{ "status": "Running" | "Succeeded" | "Failed", "output": <JSON, when Succeeded>, "error": { "code": "...", "message": "..." } <when Failed> }`. A `404` means the execution is unknown and fails the task with reason `ExecutionNotFound`.
 - **Timeout**: each task has a timeout, an optional property of the task, otherwise the task type default. It covers the whole task (action plus polling). When it expires the task is `Failed` with reason `TimedOut`; timeouts are not retried.
 - **Retries**: transient failures of a single call (network errors, HTTP 408, 429, 5xx) are retried with exponential backoff and jitter (default 3 attempts), using the standard .NET HTTP resilience handler. `Retry-After` on 429 and 503 is honoured. A task that reports `Failed`, a 4xx other than 408 and 429, and a parameter resolution error are permanent and not retried. When a task fails, the job becomes `Failed` and the remaining tasks stay `Pending`.
@@ -86,9 +91,22 @@ sequenceDiagram
     W->>DB: save output and task status, renew lease
 ```
 
+The key makes a repeated start safe. After a crash between the provider's reply and saving it, the repeated call carries the same key and the provider returns the same execution instead of starting a second one:
+
+```mermaid
+sequenceDiagram
+    participant W as Worker
+    participant P as Provider task API
+    W->>P: action call, Idempotency-Key K
+    P-->>W: executionId E1 (provider stores K = E1)
+    Note over W: crash before saving E1
+    W->>P: action call again, same key K (resume)
+    P-->>W: executionId E1, nothing new started
+```
+
 ### Statuses and control
 - **Job**: `Queued`, `Running`, `Stopped`, `Succeeded`, `Failed`, `Cancelled`. **Task**: `Pending`, `Running`, `Succeeded`, `Failed`, `Cancelled`. A soft-deleted job carries a deletion timestamp and is hidden from normal queries; a hard delete removes the rows. A job that is `Queued` or `Running` cannot be deleted.
-- **Stop** applies to a `Queued` or `Running` job. A `Queued` job stops immediately. A `Running` job is never interrupted: its running task finishes first, then the job becomes `Stopped` before the next task starts.
+- **Stop** applies to a `Queued` or `Running` job. A `Queued` job stops immediately. A `Running` job is never interrupted: its running task finishes first, then the job becomes `Stopped` and no further task is started; the remaining tasks stay `Pending`. The worker checks for a stop request on every heartbeat and poll, and again right before it would start the next task, so a request that arrives between two tasks is honoured too.
 - **Cancel** applies only to a job that is not running: a `Queued` (not started) or `Stopped` job. To cancel a running job, stop it first. The job and its unfinished tasks become `Cancelled`; this is terminal.
 - **Restart** applies to `Stopped` and `Failed` jobs: tasks that succeeded and their outputs are kept, the failed (or next pending) task is reset to `Pending`, and the job is queued again. `Cancelled` and `Succeeded` jobs cannot be restarted.
 - A stop of a running job is recorded as a request on the job and the worker sees it on its next heartbeat or poll; cancel and the other changes happen directly. State transitions are methods on the domain entities that reject illegal moves.
@@ -126,11 +144,11 @@ stateDiagram-v2
 - Good: restart-safe by construction; instances can be added without coordination.
 - Good: transitions and parameter rules are pure domain logic and unit-testable; only claiming and polling need integration tests.
 - Bad: polling the database for work adds latency (the poll interval) and a little load; `LISTEN/NOTIFY` can reduce it later.
-- Bad: at-least-once start of a task after a crash; providers must honour idempotency.
+- Bad: at-least-once start of a task after a crash; providers must honour idempotency and implement the key handling described in the contract.
 - Bad: the concurrency limit is per instance; a running job cannot be interrupted, only stopped after its current task, so a long task delays a stop.
 - Bad: every task API must follow the fixed contract; providers that do not need an adapter.
 - Bad: the claiming technique is PostgreSQL specific; it is isolated in the `IJobQueue` implementation (ADR 0003).
-- Follow-ups: persistence story with the job, task and lease columns; the execution, placeholder, runner and resume stories; global concurrency limit if needed; publish the task API contract (for example as an OpenAPI document) with the Runner; the message broker decision stays separate.
+- Follow-ups: persistence story with the job, task (including `run`, `executionId`) and lease columns; the execution, placeholder, runner and resume stories; global concurrency limit if needed; publish the task API contract (for example as an OpenAPI document) with the Runner; the message broker decision stays separate.
 
 ## Pros and cons of the options
 ### 1. PostgreSQL as the queue (chosen)
