@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LeiMa.Runner.Api/LeiMa.Runner.Api.csproj" />
+    <Project Path="src/LeiMa.Runner.Application/LeiMa.Runner.Application.csproj" />
+    <Project Path="src/LeiMa.Runner.Domain/LeiMa.Runner.Domain.csproj" />
+    <Project Path="src/LeiMa.Runner.Infrastructure/LeiMa.Runner.Infrastructure.csproj" />
+  </Folder>
+</Solution>
