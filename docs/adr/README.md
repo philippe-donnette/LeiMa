@@ -13,7 +13,7 @@ Significant, hard-to-reverse decisions are recorded here using the [MADR](https:
 |---|---|---|---|
 | [0001](0001-record-architecture-decisions.md) | Record architecture decisions | accepted | 2026-11-05 |
 | [0002](0002-shared-leima-common-package.md) | Share cross-cutting infrastructure through LeiMa.Common NuGet packages | accepted | 2026-11-07 |
-| [0003](0003-runner-service-architecture.md) | Structure LeiMa.Runner with clean architecture, a shared Aspire AppHost and cloud-agnostic ports | proposed | 2026-11-14 |
+| [0003](0003-runner-service-architecture.md) | Structure LeiMa.Runner with clean architecture, a shared Aspire AppHost and cloud-agnostic ports | accepted | 2026-11-17 |
 
 ## Planned
 Message broker, auth and permissions model, service communication and contracts, task orchestration, observability stack, monorepo build/CI strategy.

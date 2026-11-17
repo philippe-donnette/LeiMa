@@ -1,7 +1,7 @@
 # 0003. Structure LeiMa.Runner with clean architecture, a shared Aspire AppHost and cloud-agnostic ports
 
-- Status: proposed
-- Date: 2026-11-14
+- Status: accepted
+- Date: 2026-11-17
 - Deciders: project maintainers
 - Related: issues #33, #34, [0002](0002-shared-leima-common-package.md)
 
