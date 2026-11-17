@@ -120,11 +120,11 @@ It refuses to run from any branch other than `main` or when the computed tag alr
 
 
 ## Consuming from a service
-`services/nuget.config` takes `LeiMa.Common*` from GitHub Packages and everything else from nuget.org (package source mapping). Account and token come from environment variables, so nothing account-specific or secret is committed:
+`services/nuget.config` takes `LeiMa.Common*` from GitHub Packages and everything else from nuget.org (package source mapping). The feed URL is written out in the file (it names the repository owner, which is public) because Dependabot does not expand environment variables in package sources and the URL must match the registry in `.github/dependabot.yml`. The username and token come from environment variables, so no secret is committed:
 
 | Variable | Value |
 |---|---|
-| `LEIMA_NUGET_OWNER` | the GitHub account that owns the repository |
+| `LEIMA_NUGET_OWNER` | the GitHub account that owns the repository (username for the feed) |
 | `LEIMA_NUGET_TOKEN` | a personal access token (classic) with `read:packages`; in GitHub Actions use `secrets.GITHUB_TOKEN` |
 
 ```mermaid
