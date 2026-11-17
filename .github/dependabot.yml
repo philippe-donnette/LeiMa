@@ -1,4 +1,16 @@
 version: 2
+
+# GitHub Packages feed that hosts LeiMa.Common*. Username and token are Dependabot secrets
+# (Settings > Secrets and variables > Dependabot): LEIMA_NUGET_OWNER and LEIMA_NUGET_TOKEN
+# (a classic token with read:packages). The feed URL carries the repository owner; it cannot
+# use variables here.
+registries:
+  leima-packages:
+    type: nuget-feed
+    url: https://nuget.pkg.github.com/philippe-donnette/index.json
+    username: ${{secrets.LEIMA_NUGET_OWNER}}
+    password: ${{secrets.LEIMA_NUGET_TOKEN}}
+
 updates:
   - package-ecosystem: github-actions
     directory: /
@@ -17,6 +29,17 @@ updates:
       prefix: "build"
     labels:
       - "svc:common"
+
+  - package-ecosystem: nuget
+    directory: /services/LeiMa.Runner
+    registries:
+      - leima-packages
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "build"
+    labels:
+      - "svc:runner"
 
 # Add one entry per service / app when it is created (Dependabot errors on
 # directories without a manifest), e.g.:

@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\LeiMa.Runner.Domain\LeiMa.Runner.Domain.csproj" />
+    <ProjectReference Include="..\..\src\LeiMa.Runner.Application\LeiMa.Runner.Application.csproj" />
+    <ProjectReference Include="..\..\src\LeiMa.Runner.Infrastructure\LeiMa.Runner.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\LeiMa.Runner.Api\LeiMa.Runner.Api.csproj" />
+  </ItemGroup>
+
+</Project>

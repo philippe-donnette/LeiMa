@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="LeiMa.Common.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LeiMa.Runner.Application\LeiMa.Runner.Application.csproj" />
+    <ProjectReference Include="..\LeiMa.Runner.Infrastructure\LeiMa.Runner.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

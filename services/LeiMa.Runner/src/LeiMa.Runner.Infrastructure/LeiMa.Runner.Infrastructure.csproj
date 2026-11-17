@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\LeiMa.Runner.Application\LeiMa.Runner.Application.csproj" />
+  </ItemGroup>
+
+</Project>
