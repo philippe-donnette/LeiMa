@@ -37,21 +37,27 @@ Chosen options: **1 and 5**, because they meet the persistence and resume requir
 - Within a job, tasks run one after another in position order. The job runs on one worker for its whole life.
 
 ### Lease, heartbeat and resume
-- While a job runs, its worker renews the lease on a heartbeat (lease duration `Runner:LeaseSeconds`, default 60; renewed at a third of it).
+- A **lease** is a time-limited claim stored on the job row: `status = Running`, `lease_owner` (the worker instance) and `lease_expires_at`. Claiming sets it to now plus the lease duration, in the same statement that selects the job.
+- While a job runs, its worker renews the lease on a heartbeat (lease duration `Runner:LeaseSeconds`, default 60; renewed at a third of it, so one slow or missed renewal does not lose the job). The renewal is `UPDATE ... SET lease_expires_at = now + lease WHERE id = ? AND lease_owner = me`.
+- **Lost lease**: if that update affects no row, the lease expired and another worker may own the job. The worker stops immediately and writes nothing further for the job (no task results, no status changes). This check is what prevents two workers advancing one job.
+- A shorter lease recovers faster after a crash but writes more and risks false expiry on a slow moment; a longer lease does the opposite.
 - On graceful shutdown the worker stops polling, releases the lease and leaves the job `Running` with an expired lease. After a crash the lease simply expires.
 - The claim query also takes `Running` jobs whose lease has expired, so interrupted jobs are picked up by any instance, including the same one after a restart. Resume continues from the first task that has not succeeded.
-- A task that was `Running` and has a stored **execution reference** (the status location returned by the action call) is resumed by polling it again; the action is not called a second time. If no reference was stored yet (crash between sending and saving), the action is called again. Tasks must therefore be idempotent, and Runner sends a stable `Idempotency-Key` header (the task id) so providers can recognise a repeated start.
+- A task that was `Running` and has a stored **`executionId`** (returned by the action call) is resumed by polling it again; the action is not called a second time. If no reference was stored yet (crash between sending and saving), the action is called again. Tasks must therefore be idempotent, and Runner sends a stable `Idempotency-Key` header (the task id) so providers can recognise a repeated start.
+
+Example with a 60 second lease (heartbeat every 20 seconds) and a crash:
 
 ```mermaid
-flowchart TB
-    Q[("jobs table")]
-    W1["Worker A<br/>claims with lease"]
-    W2["Worker B<br/>(another instance)"]
-    Q -- "FOR UPDATE SKIP LOCKED" --> W1
-    W1 -- "heartbeat renews lease" --> Q
-    W1 -. "crash: lease expires" .-> Q
-    Q -- "expired lease re-claimed" --> W2
-    W2 -- "resume at first unfinished task" --> Q
+sequenceDiagram
+    participant A as Worker A
+    participant DB as jobs table
+    participant B as Worker B
+    A->>DB: claim (FOR UPDATE SKIP LOCKED), lease until T+60s
+    A->>DB: heartbeat at T+20s, lease until T+80s
+    A->>DB: heartbeat at T+40s, lease until T+100s
+    Note over A: crashes at T+50s
+    B->>DB: claim query at T+105s finds the expired lease
+    DB-->>B: job, resume at the first unfinished task
 ```
 
 ### Task execution
