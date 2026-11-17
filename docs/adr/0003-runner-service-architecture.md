@@ -13,6 +13,7 @@ LeiMa.Runner is the first service of the suite. It runs long-running jobs made o
 - One command starts the whole suite locally with dashboard, logs and traces
 - Services stay independent: no shared domain code, no service referencing another
 - No cloud-specific code in the domain or application logic; a different cloud means a different implementation, not a rewrite
+- The ORM (EF Core today) can be replaced without changing domain or application logic
 - Reuse of the `LeiMa.Common*` packages instead of re-implementing plumbing
 - Low overhead for a small team
 
@@ -99,25 +100,48 @@ flowchart LR
     subgraph Application["Application (ports)"]
         ITP["ITaskProvider"]
         ITK["ITokenProvider"]
+        IJR["IJobRepository"]
+        IJQ["IJobQueue"]
+        IJS["IJobReadStore"]
     end
     subgraph Infrastructure["Infrastructure (implementations)"]
         CTP["ConfigurationTaskProvider"]
         DTK["DevelopmentTokenProvider"]
         ITK2["IdentityTokenProvider<br/>(when Identity exists)"]
+        EF["EF Core persistence<br/>(replaceable)"]
     end
     CTP -. implements .-> ITP
     DTK -. implements .-> ITK
     ITK2 -. implements .-> ITK
+    EF -. implements .-> IJR
+    EF -. implements .-> IJQ
+    EF -. implements .-> IJS
     CFG["IConfiguration<br/>(App Configuration, env vars, user-secrets)"] --> CTP
 ```
-- Persistence stays PostgreSQL through EF Core and `LeiMa.Common.EntityFrameworkCore`; the queue is PostgreSQL as well (decided in the execution model ADR).
+- **Persistence ports** so the ORM can be replaced without touching Domain or Application. The database stays PostgreSQL; only the data-access technology is swappable:
+  - `IJobRepository`: loads and saves the job aggregate (job with its tasks) and commits each use case atomically.
+  - `IJobQueue`: claims queued jobs, extends and releases leases. Hides the PostgreSQL claiming technique (`FOR UPDATE SKIP LOCKED`, decided in the execution model ADR).
+  - `IJobReadStore`: list and paging queries returning read models, so no `IQueryable` or ORM type crosses the boundary.
+  - Domain entities are persistence-ignorant: no ORM attributes or base classes. Mapping is configured in Infrastructure (EF Core fluent configuration, with `LeiMa.Common.EntityFrameworkCore` conventions such as UTC timestamps and the `xmin` concurrency token, which are shadow properties and stay invisible to the domain). A different ORM maps the same entities.
+  - Repositories are per aggregate, not generic. No ORM type (`DbContext`, `DbSet`, `IQueryable`) appears in Application or Domain; the architecture test checks the references.
 - Domain and Application reference no Azure or other cloud SDK. A cloud-specific feature is added as a port with its own implementation in Infrastructure.
+
+### Keep it light
+The layers and ports are the structure; the following are deliberately not used, to keep the ceremony low:
+- No mediator library or CQRS framework: a use case is a plain class injected into the endpoint.
+- No generic repository and no separate persistence model: the ORM maps the domain entities directly.
+- No pass-through code: an endpoint calls the use case; a use case that only forwards one call is a sign the layer is not needed there.
+- DTOs only at the API boundary (requests and responses) and read models for queries; the domain is not exposed.
+- Ports exist only where a second implementation is plausible (cloud, ORM, identity) or where they hide a technique that must be testable.
+- One architecture test for the dependency rules, not a suite.
 
 ### Consequences
 - Good: domain and application logic are unit-testable without infrastructure.
+- Good: the ORM can be replaced by writing a new Infrastructure implementation of the persistence ports.
 - Good: one command (`dotnet run` on the AppHost) starts everything with dashboard, logs and traces.
 - Good: moving to another cloud means new implementations of the ports and a different configuration provider.
-- Bad: four projects and mappings per service is more ceremony than a small service needs.
+- Bad: four projects and persistence ports are more ceremony than a small service needs, which the "keep it light" rules limit.
+- Bad: the persistence ports shape the queries and aggregates; a feature that needs a rich query adds a read-store method instead of using the ORM directly.
 - Bad: the AppHost has to be kept in step with services (a project reference per service, wired in CI).
 - Bad: Aspire is a further dependency to keep current.
 - Follow-ups: scaffold the service and AppHost (Story 1, #36), CI and Dependabot for services, repo map and root `CLAUDE.md` updates, the `dotnet-backend` skill if the layout is refined, and the execution model ADR (#35).
