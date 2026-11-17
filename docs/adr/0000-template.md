@@ -20,6 +20,13 @@ What forces are at play? Two to five sentences, understandable without other con
 ## Decision outcome
 Chosen option: "Option X", because <justification tied to the drivers>.
 
+<!-- If the decision is about structure, flow or dependencies, add a small Mermaid diagram here:
+```mermaid
+flowchart LR
+    A["Component"] --> B["Component"]
+```
+-->
+
 ### Consequences
 - Good: ...
 - Bad: ...
@@ -41,6 +48,7 @@ Rules (see the `documentation` skill):
   (and the date) in a last commit of the same PR, before merging.
 - Accepted ADRs are immutable except the Status line. To change a decision,
   write a new ADR that supersedes the old one and update both statuses.
+- Diagrams are Mermaid, small, one idea each (see the `documentation` skill).
 - Public repository: no secrets, credentials or internal URLs.
 - Add the ADR to docs/adr/README.md.
 -->

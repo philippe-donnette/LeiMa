@@ -39,6 +39,7 @@ _None yet. Services are added step by step._ Keep this list current:
 - Calls to providers need timeouts, retries with backoff, and rate-limit awareness.
 - Secrets never in git; use environment variables / user-secrets / secret store.
 - Structured logging and OpenTelemetry traces/metrics in every service.
+- Docs use small Mermaid diagrams (ADRs, architecture, service docs) wherever structure or flow needs one; see the `documentation` skill.
 - Authorization is enforced server-side in every service.
 - Commits and PRs carry no AI attribution (no `Co-Authored-By`, no Anthropic email, no "Generated with" footer); see `git-commits`.
 

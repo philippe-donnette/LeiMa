@@ -16,6 +16,7 @@ One or two sentences.
 
 ## Dependencies
 - Other services, external providers, infrastructure.
+- A small Mermaid `flowchart` of the service and what it talks to (see the `documentation` skill).
 
 ## Project layout
 - `src/<Service>.Api`, `.Application`, `.Domain`, `.Infrastructure`, `tests/`

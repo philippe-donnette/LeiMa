@@ -10,6 +10,18 @@ Shared NuGet packages with cross-cutting infrastructure for all LeiMa .NET servi
 | `LeiMa.Common.EntityFrameworkCore` | UTC timestamps, concurrency tokens, audit interceptor, configuration helpers | EF Core, Npgsql |
 | `LeiMa.Common.Testing` | Web application factory base, PostgreSQL test container fixture, fake clock | xUnit, Testcontainers |
 
+```mermaid
+flowchart LR
+    Common["LeiMa.Common<br/>no heavy dependencies"]
+    Web["LeiMa.Common.AspNetCore<br/>ASP.NET Core, Serilog, OpenTelemetry"]
+    Ef["LeiMa.Common.EntityFrameworkCore<br/>EF Core, Npgsql"]
+    Test["LeiMa.Common.Testing<br/>xUnit, Testcontainers"]
+    Web --> Common
+    Ef --> Common
+    Test --> Common
+```
+Each package references only `LeiMa.Common`; a service picks the ones it needs.
+
 Current state: all four packages are implemented (tasks #13 to #16) and the publish workflow exists (task #17); see Releasing and Consuming below.
 
 ## Using LeiMa.Common
@@ -93,6 +105,17 @@ Releases are manual, so every version is a deliberate decision (nothing is publi
    - `dry_run`: build, test and pack only. Use it to check a release before publishing.
 3. The workflow computes the version (`tools/next-common-version.sh`), builds and tests (including the Docker tests), packs, pushes to GitHub Packages (existing versions are skipped, never overwritten) and creates the tag `common-vX.Y.Z` with a GitHub release and generated notes.
 
+```mermaid
+flowchart LR
+    Run["Run workflow<br/>on main"] --> Ver["Compute version<br/>from common-v* tags"]
+    Ver --> BT["Build and test"]
+    BT --> Pack["Pack 4 packages"]
+    Pack --> Dry{"dry_run?"}
+    Dry -- yes --> Stop["Stop"]
+    Dry -- no --> Push["Push to<br/>GitHub Packages"]
+    Push --> Rel["Create tag and<br/>GitHub release"]
+```
+
 It refuses to run from any branch other than `main` or when the computed tag already exists. Published versions cannot be changed: to fix a bad release, publish the next version.
 
 
@@ -103,6 +126,13 @@ It refuses to run from any branch other than `main` or when the computed tag alr
 |---|---|
 | `LEIMA_NUGET_OWNER` | the GitHub account that owns the repository |
 | `LEIMA_NUGET_TOKEN` | a personal access token (classic) with `read:packages`; in GitHub Actions use `secrets.GITHUB_TOKEN` |
+
+```mermaid
+flowchart LR
+    Svc["Service restore"] --> Cfg["services/nuget.config<br/>source mapping"]
+    Cfg -- "LeiMa.Common*" --> Feed["GitHub Packages feed<br/>token from env vars"]
+    Cfg -- "everything else" --> Nuget["nuget.org"]
+```
 
 ```bash
 export LEIMA_NUGET_OWNER=<github account>
