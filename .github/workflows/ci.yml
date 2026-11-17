@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  packages: read   # restore LeiMa.Common* from GitHub Packages
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -14,7 +15,7 @@ concurrency:
 
 jobs:
   # Single, always-running job so it can be a required status check.
-  # It discovers .NET solutions under services/ and libs/ and web apps under web/.
+  # It discovers .NET solutions under services/, libs/ and aspire/ and web apps under web/.
   ci:
     runs-on: ubuntu-latest
     steps:
@@ -24,7 +25,7 @@ jobs:
         id: detect
         shell: bash
         run: |
-          dotnet=$(find services libs -mindepth 2 -maxdepth 4 \( -name '*.sln' -o -name '*.slnx' \) 2>/dev/null | sort || true)
+          dotnet=$(find services libs aspire -mindepth 2 -maxdepth 4 \( -name '*.sln' -o -name '*.slnx' \) 2>/dev/null | sort || true)
           node=$(find web -mindepth 2 -maxdepth 3 -name package.json -not -path '*/node_modules/*' 2>/dev/null | sort || true)
           {
             echo "has_dotnet=$([ -n "$dotnet" ] && echo true || echo false)"
@@ -43,6 +44,10 @@ jobs:
       - name: Build and test .NET services
         if: steps.detect.outputs.has_dotnet == 'true'
         shell: bash
+        env:
+          # Read by services/nuget.config to restore LeiMa.Common* from GitHub Packages.
+          LEIMA_NUGET_OWNER: ${{ github.repository_owner }}
+          LEIMA_NUGET_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           while IFS= read -r sln; do
             [ -z "$sln" ] && continue
