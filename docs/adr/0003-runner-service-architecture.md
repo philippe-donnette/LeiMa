@@ -46,6 +46,17 @@ services/LeiMa.Runner/
   src/LeiMa.Runner.Api/             endpoints, authentication, composition root; depends on Application and Infrastructure
   tests/LeiMa.Runner.UnitTests/  tests/LeiMa.Runner.IntegrationTests/  tests/LeiMa.Runner.ArchitectureTests/
 ```
+```mermaid
+flowchart LR
+    Api["LeiMa.Runner.Api<br/>endpoints, composition root"]
+    Infra["LeiMa.Runner.Infrastructure<br/>EF Core, HTTP clients, background service"]
+    App["LeiMa.Runner.Application<br/>use cases, ports"]
+    Domain["LeiMa.Runner.Domain<br/>entities, rules"]
+    Api --> App
+    Api --> Infra
+    Infra --> App
+    App --> Domain
+```
 - Dependencies point inward only; an architecture test fails the build on a violation.
 - The Api is the only project that references Infrastructure, to register it.
 - The background service that runs jobs lives in Infrastructure and is registered by the Api; the logic it calls lives in Application.
@@ -56,12 +67,49 @@ services/LeiMa.Runner/
 - It declares PostgreSQL, the App Configuration emulator and each service, and injects connection strings, service URLs and the OTLP endpoint (`OTEL_EXPORTER_OTLP_ENDPOINT`). New services and frontends are added to it as they appear.
 - No ServiceDefaults project (option 6 rejected): `LeiMa.Common.AspNetCore` already provides logging, telemetry, health and ProblemDetails, and a ServiceDefaults project would duplicate it and put shared code into every service.
 - The AppHost references service projects. This coupling is acceptable because only the development host knows all services; services never reference each other or the AppHost.
+```mermaid
+flowchart TB
+    Host["aspire/LeiMa.AppHost<br/>development host, never deployed"]
+    subgraph Suite["Suite (grows as services and frontends are added)"]
+        Runner["LeiMa.Runner.Api"]
+        Identity["LeiMa.Identity.Api<br/>(future)"]
+        Others["other services, frontends"]
+    end
+    PG[("PostgreSQL")]
+    Cfg["App Configuration emulator"]
+    Providers["Provider task APIs<br/>(external)"]
+    Host -. starts and wires .-> Runner
+    Host -. starts .-> PG
+    Host -. starts .-> Cfg
+    Host -. starts .-> Identity
+    Host -. starts .-> Others
+    Runner --> PG
+    Runner -->|"IConfiguration"| Cfg
+    Runner -->|"token"| Identity
+    Runner -->|"action and status calls"| Providers
+```
 - Services must run without Aspire too (plain `dotnet run` with configuration from environment variables), so Aspire stays optional for them.
 
 ### Cloud-agnostic ports (option 8)
 - **Configuration** goes through `IConfiguration` only. Azure App Configuration is one configuration provider, registered by the Api based on configuration. Locally it is the App Configuration emulator started by the AppHost. Nothing is pushed to Azure for now. Secrets never go into App Configuration; they come from environment variables, user-secrets or a secret store.
 - **`ITaskProvider`** (Application port): resolves a task type to its action endpoint, status endpoint, authentication scheme and default timeout. First implementation in Infrastructure reads configuration.
 - **`ITokenProvider`** (Application port): returns a valid bearer token for calling task endpoints, refreshed before expiry. The real implementation authenticates to LeiMa.Identity.Api; until that exists, a development implementation supplies a configured token.
+```mermaid
+flowchart LR
+    subgraph Application["Application (ports)"]
+        ITP["ITaskProvider"]
+        ITK["ITokenProvider"]
+    end
+    subgraph Infrastructure["Infrastructure (implementations)"]
+        CTP["ConfigurationTaskProvider"]
+        DTK["DevelopmentTokenProvider"]
+        ITK2["IdentityTokenProvider<br/>(when Identity exists)"]
+    end
+    CTP -. implements .-> ITP
+    DTK -. implements .-> ITK
+    ITK2 -. implements .-> ITK
+    CFG["IConfiguration<br/>(App Configuration, env vars, user-secrets)"] --> CTP
+```
 - Persistence stays PostgreSQL through EF Core and `LeiMa.Common.EntityFrameworkCore`; the queue is PostgreSQL as well (decided in the execution model ADR).
 - Domain and Application reference no Azure or other cloud SDK. A cloud-specific feature is added as a port with its own implementation in Infrastructure.
 
