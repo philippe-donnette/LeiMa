@@ -1,6 +1,6 @@
 # 0004. Run jobs from a PostgreSQL queue with leases, sequential tasks and placeholder parameters
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-17
 - Deciders: project maintainers
 - Related: issues #33, #35, [0003](0003-runner-service-architecture.md)
