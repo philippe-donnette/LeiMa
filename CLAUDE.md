@@ -14,7 +14,7 @@ services/<name>/   one folder per microservice, each with its own CLAUDE.md
 services/_template per-service CLAUDE.md template (not a service)
 libs/dotnet/       shared .NET libraries, e.g. LeiMa.Common (NuGet packages, see below)
 web/               React frontends
-docs/              architecture/, adr/, user-stories/
+docs/              architecture/, adr/, user-stories/, FAQ.md (keep it updated with problems and fixes worth remembering)
 tools/             scripts
 .claude/skills/    project skills (see below)
 ```
