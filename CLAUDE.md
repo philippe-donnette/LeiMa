@@ -12,6 +12,7 @@ LeiMa is a suite of microservices to **administer, monitor, manage permissions, 
 ```
 services/<name>/   one folder per microservice, each with its own CLAUDE.md
 services/_template per-service CLAUDE.md template (not a service)
+aspire/            LeiMa.AppHost: the Aspire host that runs the suite locally (not a service, never deployed)
 libs/dotnet/       shared .NET libraries, e.g. LeiMa.Common (NuGet packages, see below)
 web/               React frontends
 docs/              architecture/, adr/, user-stories/, FAQ.md (keep it updated with problems and fixes worth remembering)
@@ -20,17 +21,20 @@ tools/             scripts
 ```
 
 ## Services
-_None yet. Services are added step by step._ Keep this list current:
+Services are added step by step. Keep this list current:
 
 | Service | Purpose | Folder |
 |---|---|---|
+| LeiMa.Runner | Runs jobs of ordered tasks against provider APIs, with persistent state (skeleton; ADR 0003, 0004) | `services/LeiMa.Runner` |
 
 ## Default stack (editable; record changes in `docs/adr/`)
 - .NET 10 / ASP.NET Core, C#
 - EF Core + PostgreSQL, one database per service
 - React + TypeScript (Vite), Tailwind CSS with the shared `web/packages/ui` design system (`@leima/ui`)
 - Shared infrastructure for .NET services: `LeiMa.Common` NuGet packages in `libs/dotnet/LeiMa.Common` (ADR 0002, accepted)
-- Message broker for task orchestration: TBD (ADR)
+- Local orchestration: one shared Aspire AppHost in `aspire/LeiMa.AppHost` for the whole suite (ADR 0003); services stay runnable without it
+- Service structure: clean architecture, one solution per service, ports in Application for ORM, cloud and identity (ADR 0003)
+- Message broker for task orchestration: TBD (ADR); the Runner queues jobs in PostgreSQL meanwhile (ADR 0004)
 
 ## Cross-cutting conventions
 - Services are independent: no shared database, no shared domain code; communicate via HTTP APIs or events.
@@ -39,6 +43,7 @@ _None yet. Services are added step by step._ Keep this list current:
 - Calls to providers need timeouts, retries with backoff, and rate-limit awareness.
 - Secrets never in git; use environment variables / user-secrets / secret store.
 - Structured logging and OpenTelemetry traces/metrics in every service.
+- XML documentation on every code element of a service's `src` projects, public or not (enforced by the build); documentation in the code is essential.
 - Docs use small Mermaid diagrams (ADRs, architecture, service docs) wherever structure or flow needs one; see the `documentation` skill.
 - Authorization is enforced server-side in every service.
 - Commits and PRs carry no AI attribution (no `Co-Authored-By`, no Anthropic email, no "Generated with" footer); see `git-commits`.
