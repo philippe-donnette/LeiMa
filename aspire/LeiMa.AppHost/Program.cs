@@ -9,6 +9,13 @@ var postgres = builder.AddPostgres("postgres")
     .WithContainerName("leima-postgres")
     .WithDataVolume();
 
-postgres.AddDatabase("runner");
+var runnerDb = postgres.AddDatabase("runner");
+
+// Aspire injects the connection string of the referenced database (ConnectionStrings__runner) and
+// the OpenTelemetry settings (OTEL_EXPORTER_OTLP_ENDPOINT, service name), which LeiMa.Common reads.
+builder.AddDotnetProject("runner-api", "../../services/LeiMa.Runner/src/LeiMa.Runner.Api/LeiMa.Runner.Api.csproj")
+    .WithReference(runnerDb)
+    .WaitFor(runnerDb)
+    .WithHttpHealthCheck("/health/ready");
 
 builder.Build().Run();
