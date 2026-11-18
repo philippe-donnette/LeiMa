@@ -41,6 +41,21 @@ updates:
     labels:
       - "svc:runner"
 
+  # The AppHost uses only nuget.org packages, so it needs no registry. The Aspire packages must
+  # share one version, so they are updated together in a single pull request.
+  - package-ecosystem: nuget
+    directory: /aspire/LeiMa.AppHost
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "build"
+    labels:
+      - "svc:platform"
+    groups:
+      aspire:
+        patterns:
+          - "Aspire.*"
+
 # Add one entry per service / app when it is created (Dependabot errors on
 # directories without a manifest), e.g.:
 #
