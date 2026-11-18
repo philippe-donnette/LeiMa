@@ -19,6 +19,7 @@ Adding/changing services, making architectural decisions, or any change that mak
   - Add every ADR to the index in `docs/adr/README.md`.
 - **Architecture** overview and diagrams in `docs/architecture/`.
 - **Diagrams** are Mermaid (see "Diagrams" below) wherever a picture explains more than prose: ADRs, architecture docs, service `CLAUDE.md` and READMEs.
+- **FAQ** in `docs/FAQ.md`: questions and problems that cost time while working on LeiMa (local setup, tooling, Docker, CI). Keep it up to date: whenever something comes up that is worth adding (a non-obvious error, a fix, a command that is easy to forget), add an entry in the same change or tell the user it is worth adding. Each entry has the symptom, the cause and the fix with the command, and says why the fix works. Only add what was verified; say so when part of an entry is not.
 - **User stories** live in GitHub issues (see `user-stories`, `github-workflow`); `docs/user-stories/` holds the template and optional long-form detail.
 - READMEs: what it is, how to run, how to test; no duplication of CLAUDE.md content, link instead.
 - Code docs: XML doc comments on public APIs of shared contracts; TSDoc for exported frontend utilities; comment the *why*, not the *what*.
@@ -42,6 +43,7 @@ Use Mermaid in a fenced ```` ```mermaid ```` block; GitHub renders it. No image 
 - [ ] Relevant CLAUDE.md files updated in the same change
 - [ ] ADR added for new significant decisions
 - [ ] Diagram added or updated where structure or flow changed (Mermaid, small)
+- [ ] FAQ entry added if something non-obvious cost time or is likely to again
 - [ ] Links valid
 
 ## Don'ts

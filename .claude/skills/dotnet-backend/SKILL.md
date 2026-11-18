@@ -19,6 +19,9 @@ Creating a new service or modifying C# code in `services/<name>/`.
 - Long-running work: `BackgroundService` / worker with bounded concurrency, idempotent and resumable steps, persisted state.
 - Observability: Serilog/structured logs, OpenTelemetry, `/health/live` and `/health/ready`.
 - AuthN/AuthZ enforced with policies on every endpoint.
+- XML documentation comment on every code element in `src`, public or not: `GenerateDocumentationFile` plus the StyleCop analyzers with only SA1600 enabled (see `services/LeiMa.Runner`: `Directory.Build.props`, `src/Directory.Build.props`, `.editorconfig`, `src/stylecop.json`).
+- Domain and Application use no ORM, web or cloud types; persistence, identity and cloud access are ports in Application implemented in Infrastructure. An architecture test enforces inward-only references and this rule (ADR 0003).
+- Keep it light: no mediator library, no generic repositories, no separate persistence model.
 
 ## Shared packages (`LeiMa.Common*`)
 - Reference `LeiMa.Common`, `LeiMa.Common.AspNetCore`, `LeiMa.Common.EntityFrameworkCore` and `LeiMa.Common.Testing` from `libs/dotnet/LeiMa.Common` (published to GitHub Packages; `services/nuget.config` is the feed, set `LEIMA_NUGET_OWNER` and `LEIMA_NUGET_TOKEN` to restore; see that folder's `CLAUDE.md`).
@@ -31,12 +34,14 @@ Creating a new service or modifying C# code in `services/<name>/`.
 services/<name>/
   CLAUDE.md
   src/<Name>.Api  <Name>.Application  <Name>.Domain  <Name>.Infrastructure
-  tests/<Name>.UnitTests  <Name>.IntegrationTests
+  tests/<Name>.ArchitectureTests  <Name>.UnitTests  <Name>.IntegrationTests
 ```
+Folder `services/LeiMa.<Name>`, projects `LeiMa.<Name>.Api` and so on, one `LeiMa.<Name>.slnx` per service. Register the service in the shared `aspire/LeiMa.AppHost` with `AddDotnetProject` (and a database with `AddDatabase` if it has one).
 
 ## Checklist
 - [ ] Service `CLAUDE.md` created/updated; root `CLAUDE.md` service table updated
-- [ ] Tests added (see `testing` skill)
+- [ ] Registered in `aspire/LeiMa.AppHost`; nuget entry in `.github/dependabot.yml` (with the `leima-packages` registry if it uses `LeiMa.Common*`)
+- [ ] Tests added (see `testing` skill), including the architecture test
 - [ ] Health checks, logging, auth in place
 - [ ] No reference to another service's internals
 
