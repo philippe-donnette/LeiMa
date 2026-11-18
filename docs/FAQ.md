@@ -2,6 +2,26 @@
 
 Answers to questions and problems that come up while working on LeiMa locally. Add an entry when you solve something that cost you time. Keep answers short and say why the fix works.
 
+## Dependencies and Dependabot
+
+### Why does Dependabot not propose the 11.x versions of some packages?
+**Short answer:** those packages moved to version 11 to match .NET 11, and LeiMa is on .NET 10. We closed the PRs and told Dependabot to ignore that major version. Minor and patch updates of the 10.x line still arrive.
+
+**What was ignored** (closed with `@dependabot ignore this major version`):
+- `Microsoft.Extensions.TimeProvider.Testing` 11.0.0 ([#62](https://github.com/philippe-donnette/LeiMa/pull/62)).
+- `Serilog.AspNetCore` 11.0.0 ([#69](https://github.com/philippe-donnette/LeiMa/pull/69)).
+
+**Why not just merge them:** the `LeiMa.Common*` packages are published and used by services that run on .NET 10. `Serilog.AspNetCore` 11.0.0 has a net10.0 build, but it needs `Serilog.Extensions.Hosting` 11.0.0, which in turn requires the 11.0.0 versions of `Microsoft.Extensions.DependencyInjection.Abstractions`, `Hosting.Abstractions` and `Logging.Abstractions` (checked in the package metadata on nuget.org). Every service would then get .NET 11 libraries next to a .NET 10 runtime and 10.x packages such as `Microsoft.AspNetCore.Authentication.JwtBearer`. That mix often works but is not a supported combination, and the CI of the Common library alone would not show a problem in a service. The 11.0.0 release notes of `TimeProvider.Testing` said it ships alongside .NET 11 and also carried draft and validation-not-passed comments. We gain nothing from either update today.
+
+**See what is ignored:** comment on any Dependabot PR (or a closed one) `@dependabot show <package name> ignore conditions`. To undo an ignore, reopen the closed PR.
+
+**Checklist for the move to .NET 11** (not planned yet):
+1. Change `TargetFramework` in the `Directory.Build.props` files of `libs/dotnet/LeiMa.Common`, `services/LeiMa.Runner` and `aspire/LeiMa.AppHost`, and the .NET version in the `setup-dotnet` steps of `ci.yml` and `publish-common.yml`.
+2. Reopen #62 and #69 (or raise the packages by hand) and bump the packages that follow .NET, such as `Microsoft.AspNetCore.*` and `Microsoft.Extensions.*`.
+3. Run all tests, including the Docker ones, and start the AppHost.
+4. Release the Common packages with a major version bump (the target framework changes for consumers), then move each service to the new version and framework.
+This list is a starting point; revise it when the move is planned.
+
 ## GitHub token and secrets
 
 ### Restoring `LeiMa.Common*` fails with 401 Unauthorized, or Dependabot reports a feed authentication error
