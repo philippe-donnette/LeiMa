@@ -7,5 +7,5 @@ See [CLAUDE.md](CLAUDE.md) for structure, stack and conventions.
 - `services/` microservices
 - `libs/` shared libraries (`libs/dotnet/LeiMa.Common` NuGet packages)
 - `web/` React frontends
-- `docs/` architecture, ADRs, user stories
+- `docs/` architecture, ADRs, user stories, [FAQ](docs/FAQ.md)
 - `tools/` scripts
