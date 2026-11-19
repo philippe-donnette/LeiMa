@@ -1,6 +1,6 @@
 # 0005. Apply Runner database migrations with a separate migrator project
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-19
 - Deciders: project maintainers
 - Related: issues #33, #41, #73, [0003](0003-runner-service-architecture.md)

@@ -15,7 +15,7 @@ Significant, hard-to-reverse decisions are recorded here using the [MADR](https:
 | [0002](0002-shared-leima-common-package.md) | Share cross-cutting infrastructure through LeiMa.Common NuGet packages | accepted | 2026-11-07 |
 | [0003](0003-runner-service-architecture.md) | Structure LeiMa.Runner with clean architecture, a shared Aspire AppHost and cloud-agnostic ports | accepted | 2026-11-17 |
 | [0004](0004-runner-execution-model.md) | Run jobs from a PostgreSQL queue with leases, sequential tasks and placeholder parameters | accepted | 2026-11-17 |
-| [0005](0005-runner-migrator-project.md) | Apply Runner database migrations with a separate migrator project | proposed | 2026-11-19 |
+| [0005](0005-runner-migrator-project.md) | Apply Runner database migrations with a separate migrator project | accepted | 2026-11-19 |
 
 ## Planned
 Message broker, auth and permissions model, service communication and contracts, task orchestration, observability stack, monorepo build/CI strategy.
