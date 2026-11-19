@@ -9,3 +9,5 @@ See [CLAUDE.md](CLAUDE.md) for structure, stack and conventions.
 - `web/` React frontends
 - `docs/` architecture, ADRs, user stories, [FAQ](docs/FAQ.md)
 - `tools/` scripts
+
+In VS Code, accept the recommended extensions (`.vscode/extensions.json`) for C# IntelliSense, diagnostics and the test explorer.
