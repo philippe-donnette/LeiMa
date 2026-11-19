@@ -7,5 +7,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/LeiMa.Runner.ArchitectureTests/LeiMa.Runner.ArchitectureTests.csproj" />
+    <Project Path="tests/LeiMa.Runner.UnitTests/LeiMa.Runner.UnitTests.csproj" />
   </Folder>
 </Solution>
