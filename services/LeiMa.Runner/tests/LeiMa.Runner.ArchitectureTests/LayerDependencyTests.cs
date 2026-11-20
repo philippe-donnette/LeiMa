@@ -21,6 +21,11 @@ public class LayerDependencyTests
         "Microsoft.EntityFrameworkCore", "Npgsql", "Microsoft.AspNetCore", "Azure", "Microsoft.Azure", "Amazon",
     ];
 
+    private static readonly string[] ForbiddenAttributeNamespaces =
+    [
+        "Microsoft.EntityFrameworkCore", "System.ComponentModel.DataAnnotations",
+    ];
+
     public static IEnumerable<object[]> AllLayers => AllowedLayers.Keys.Select(layer => new object[] { layer });
 
     public static IEnumerable<object[]> CoreLayers => new[] { "Domain", "Application" }.Select(layer => new object[] { layer });
@@ -64,6 +69,24 @@ public class LayerDependencyTests
         AssertNoViolations(
             packages.Concat(assemblies).Where(IsForbiddenInCore).Distinct(),
             $"{layer} depends on an ORM, web framework or cloud SDK; these belong in Infrastructure or Api behind ports (ADR 0003)");
+    }
+
+    [Fact]
+    public void Attributes_Domain_HaveNoOrmOrDataAnnotationAttributes()
+    {
+        const BindingFlags all = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
+        var domain = Assembly.Load(Prefix + "Domain");
+
+        var violations = domain.GetTypes()
+            .SelectMany(type => new MemberInfo[] { type }.Concat(type.GetMembers(all)))
+            .SelectMany(member => member.GetCustomAttributesData().Select(attribute => (member, attribute)))
+            .Where(found => ForbiddenAttributeNamespaces.Any(ns => (found.attribute.AttributeType.Namespace ?? string.Empty).StartsWith(ns, StringComparison.Ordinal)))
+            .Select(found => $"{found.member.DeclaringType?.Name ?? found.member.Name}.{found.member.Name} has [{found.attribute.AttributeType.Name}]")
+            .Distinct();
+
+        AssertNoViolations(
+            violations,
+            "Domain classes must carry no ORM or data annotation attributes; the mapping lives in Infrastructure configuration classes and the rules in the domain code (ADR 0003)");
     }
 
     private static string Describe(string[] layers) => layers.Length == 0 ? "none" : string.Join(", ", layers);
