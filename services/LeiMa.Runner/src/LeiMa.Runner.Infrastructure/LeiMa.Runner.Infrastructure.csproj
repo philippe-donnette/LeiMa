@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="LeiMa.Common.EntityFrameworkCore" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\LeiMa.Runner.Application\LeiMa.Runner.Application.csproj" />
   </ItemGroup>
 
