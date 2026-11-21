@@ -11,11 +11,18 @@ var postgres = builder.AddPostgres("postgres")
 
 var runnerDb = postgres.AddDatabase("runner");
 
+// The migrator applies the pending migrations of the runner database and exits (ADR 0005).
+// A failed migration (non-zero exit code) keeps the Api from starting.
+var runnerMigrator = builder.AddDotnetProject("runner-migrator", "../../services/LeiMa.Runner/src/LeiMa.Runner.Migrator/LeiMa.Runner.Migrator.csproj")
+    .WithReference(runnerDb)
+    .WaitFor(runnerDb);
+
 // Aspire injects the connection string of the referenced database (ConnectionStrings__runner) and
 // the OpenTelemetry settings (OTEL_EXPORTER_OTLP_ENDPOINT, service name), which LeiMa.Common reads.
 builder.AddDotnetProject("runner-api", "../../services/LeiMa.Runner/src/LeiMa.Runner.Api/LeiMa.Runner.Api.csproj")
     .WithReference(runnerDb)
     .WaitFor(runnerDb)
+    .WaitForCompletion(runnerMigrator)
     .WithHttpHealthCheck("/health/ready");
 
 builder.Build().Run();
