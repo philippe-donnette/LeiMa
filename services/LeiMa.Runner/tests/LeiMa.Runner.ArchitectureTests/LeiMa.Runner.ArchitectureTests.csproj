@@ -5,6 +5,7 @@
     <ProjectReference Include="..\..\src\LeiMa.Runner.Application\LeiMa.Runner.Application.csproj" />
     <ProjectReference Include="..\..\src\LeiMa.Runner.Infrastructure\LeiMa.Runner.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\LeiMa.Runner.Api\LeiMa.Runner.Api.csproj" />
+    <ProjectReference Include="..\..\src\LeiMa.Runner.Migrator\LeiMa.Runner.Migrator.csproj" />
   </ItemGroup>
 
 </Project>

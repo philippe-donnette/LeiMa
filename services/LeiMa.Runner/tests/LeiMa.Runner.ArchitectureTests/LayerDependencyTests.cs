@@ -14,6 +14,9 @@ public class LayerDependencyTests
         ["Application"] = ["Domain"],
         ["Infrastructure"] = ["Domain", "Application"],
         ["Api"] = ["Domain", "Application", "Infrastructure"],
+
+        // A second composition root next to the Api, not a layer: nothing may reference it (ADR 0005).
+        ["Migrator"] = ["Application", "Infrastructure"],
     };
 
     private static readonly string[] ForbiddenInCore =
