@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="LeiMa.Common.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\LeiMa.Runner.Infrastructure\LeiMa.Runner.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
