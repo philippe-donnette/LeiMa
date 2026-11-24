@@ -13,9 +13,16 @@ public sealed class Widget
     public DateTimeOffset? LastRunAt { get; set; }
 }
 
+public sealed class Plain
+{
+    public Guid Id { get; set; } = Ids.NewId();
+}
+
 public sealed class SampleDbContext(DbContextOptions<SampleDbContext> options) : DbContext(options)
 {
     public DbSet<Widget> Widgets => Set<Widget>();
+
+    public DbSet<Plain> Plains => Set<Plain>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) =>
         configurationBuilder.UseLeiMaConventions();
