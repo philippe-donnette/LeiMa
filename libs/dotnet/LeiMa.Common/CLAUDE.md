@@ -60,10 +60,21 @@ entity.HasAuditTimestamps();        // CreatedAt / UpdatedAt, filled on save fro
 ```
 - `UseLeiMaConventions` stores every `DateTime` / `DateTimeOffset` as `timestamptz` in UTC; reads return `DateTimeKind.Utc`, unspecified values are treated as UTC.
 - `HasAuditTimestamps` adds `DateTimeOffset` shadow properties unless the entity declares `CreatedAt` / `UpdatedAt` itself (`DateTime` or `DateTimeOffset`). `CreatedAt` is never changed on update.
+- `dbContext.CreatedAt(entity)` / `dbContext.UpdatedAt(entity)` read the stored values, also for shadow properties (useful in tests); they throw if the entity is not auditable.
 
 ## Using LeiMa.Common.Testing
 - `PostgreSqlFixture` (`IClassFixture`) starts one `postgres:17-alpine` container per test class; `CreateDatabaseAsync()` returns the connection string of a fresh, isolated database.
 - Mark tests that need Docker with `[RequiresDockerFact]`: skipped when Docker is not running locally, but they fail on CI (`CI` / `GITHUB_ACTIONS` set), so CI never silently skips them.
+- `PostgresTestHost`: the service's registration on a fresh database with a fake clock, for integration tests of persistence. It knows no service types: pass the registration and the migration as delegates.
+  ```csharp
+  await using var host = await PostgresTestHost.CreateAsync(
+      postgres, "runner",                                       // fixture, name under ConnectionStrings
+      services => services.AddRunnerInfrastructure(),           // the service's own registration
+      sp => RunnerDatabase.MigrateAsync(sp, logger, default),   // optional; migrateNow: false to test the migration itself
+      startTime: null);                                         // fake clock start, default 2026-01-01T10:00Z
+  await using var scope = host.NewScope();                      // one scope per request, like production
+  ```
+  `Clock` is the registered `TimeProvider`; `ExecuteAsync(sql)` and `QueryAsync(sql)` run raw SQL (to arrange or check data the model hides). Repository helpers such as "save, load" stay in the service's tests: no generic repository is shared (ADR 0003).
 - `LeiMaWebApplicationFactory<Program>`: runs the service in the `Testing` environment, exposes `Clock` (a `FakeTimeProvider` registered as the `TimeProvider`) and `WithSetting(key, value)` for configuration overrides.
 
 ## Scope rule
@@ -78,7 +89,7 @@ src/<Package>/               # packable; src/Directory.Build.props holds package
 src/<Package>/README.md      # shown on the package page; packed automatically, keep it short
 tests/<Package>.Tests/       # xUnit; same-named test project sees internals
 ```
-`LeiMa.Common.Testing` has no test project of its own; `PostgreSqlFixture` is exercised by the EF Core tests. `LeiMaWebApplicationFactory` needs a real service entry point, so it is first exercised by the first service that uses it.
+`LeiMa.Common.Testing` has no test project of its own; `PostgreSqlFixture` and `PostgresTestHost` are exercised by the EF Core tests. `LeiMaWebApplicationFactory` needs a real service entry point, so it is first exercised by the first service that uses it.
 
 ## Commands (run in this folder)
 ```bash
