@@ -25,7 +25,7 @@ Services are added step by step. Keep this list current:
 
 | Service | Purpose | Folder |
 |---|---|---|
-| LeiMa.Runner | Runs jobs of ordered tasks against provider APIs, with persistent state (skeleton; ADR 0003, 0004) | `services/LeiMa.Runner` |
+| LeiMa.Runner | Runs jobs of ordered tasks against provider APIs, with persistent state (skeleton and persistence; ADR 0003, 0004, 0005) | `services/LeiMa.Runner` |
 
 ## Default stack (editable; record changes in `docs/adr/`)
 - .NET 10 / ASP.NET Core, C#
