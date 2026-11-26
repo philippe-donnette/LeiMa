@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LeiMa.Common;
+using LeiMa.Common.EntityFrameworkCore;
 using LeiMa.Common.Testing;
 using LeiMa.Runner.Application.Repository;
 using LeiMa.Runner.Domain;
@@ -20,7 +21,7 @@ public class JobPersistenceTests(PostgreSqlFixture postgres)
     private static async Task<Job> LoadAsync(AsyncServiceScope scope, Guid id) =>
         await Repository(scope).GetAsync(id, CancellationToken.None) ?? throw new InvalidOperationException("The job was not found.");
 
-    private static async Task SaveNewAsync(RunnerTestHost host, Job job)
+    private static async Task SaveNewAsync(PostgresTestHost host, Job job)
     {
         await using var scope = host.NewScope();
         Repository(scope).Add(job);
@@ -28,13 +29,10 @@ public class JobPersistenceTests(PostgreSqlFixture postgres)
         Assert.True(saved.IsSuccess, "The new job should have been saved.");
     }
 
-    private static DateTimeOffset Audit(AsyncServiceScope scope, object entity, string property) =>
-        (DateTimeOffset)Context(scope).Entry(entity).Property(property).CurrentValue!;
-
     [RequiresDockerFact]
     public async Task SaveAndLoad_JobWithThreeTasks_ComesBackWithTheSameDataInPositionOrder()
     {
-        await using var host = await RunnerTestHost.CreateAsync(postgres);
+        await using var host = await RunnerHost.CreateAsync(postgres);
         var job = TestJobs.WithTasks("a", "b", "c");
         await SaveNewAsync(host, job);
 
@@ -64,7 +62,7 @@ public class JobPersistenceTests(PostgreSqlFixture postgres)
     [RequiresDockerFact]
     public async Task Load_TasksStoredInAnotherOrder_ComeBackInPositionOrder()
     {
-        await using var host = await RunnerTestHost.CreateAsync(postgres);
+        await using var host = await RunnerHost.CreateAsync(postgres);
         var job = TestJobs.WithTasks("a", "b", "c");
         await SaveNewAsync(host, job);
 
@@ -84,7 +82,7 @@ public class JobPersistenceTests(PostgreSqlFixture postgres)
     [RequiresDockerFact]
     public async Task SaveAndLoad_ParametersWithPlaceholders_AreUnchanged()
     {
-        await using var host = await RunnerTestHost.CreateAsync(postgres);
+        await using var host = await RunnerHost.CreateAsync(postgres);
         const string json = """
             {"customerId":"{{tasks.1.output.items[0].id}}","note":"first of {{tasks.1.output.total}}",
              "nested":{"list":[1,2.5,{"x":null}],"text":"ünïcode \"quoted\" \\ slash"},"flag":true,"count":3}
@@ -104,7 +102,7 @@ public class JobPersistenceTests(PostgreSqlFixture postgres)
     [RequiresDockerFact]
     public async Task Get_UnknownId_ReturnsNull()
     {
-        await using var host = await RunnerTestHost.CreateAsync(postgres);
+        await using var host = await RunnerHost.CreateAsync(postgres);
 
         await using var scope = host.NewScope();
 
@@ -114,7 +112,7 @@ public class JobPersistenceTests(PostgreSqlFixture postgres)
     [RequiresDockerFact]
     public async Task Save_JobChangedByAnotherWriter_ReturnsConflictAndKeepsTheFirstChange()
     {
-        await using var host = await RunnerTestHost.CreateAsync(postgres);
+        await using var host = await RunnerHost.CreateAsync(postgres);
         var job = TestJobs.WithTasks("a", "b");
         await SaveNewAsync(host, job);
 
@@ -140,7 +138,7 @@ public class JobPersistenceTests(PostgreSqlFixture postgres)
     [RequiresDockerFact]
     public async Task Save_TaskChangedByAnotherWriter_ReturnsConflictAndKeepsTheFirstChange()
     {
-        await using var host = await RunnerTestHost.CreateAsync(postgres);
+        await using var host = await RunnerHost.CreateAsync(postgres);
         var job = TestJobs.WithTasks("a", "b");
         await SaveNewAsync(host, job);
 
@@ -165,7 +163,7 @@ public class JobPersistenceTests(PostgreSqlFixture postgres)
     [RequiresDockerFact]
     public async Task Save_NewJob_StoresCreatedAndUpdatedTimeInUtcFromTheClock()
     {
-        await using var host = await RunnerTestHost.CreateAsync(postgres);
+        await using var host = await RunnerHost.CreateAsync(postgres);
         var job = TestJobs.WithTasks("a", "b");
         await SaveNewAsync(host, job);
 
@@ -174,16 +172,16 @@ public class JobPersistenceTests(PostgreSqlFixture postgres)
 
         foreach (var entity in new object[] { loaded }.Concat(loaded.Tasks))
         {
-            Assert.Equal(RunnerTestHost.StartTime, Audit(scope, entity, "CreatedAt"));
-            Assert.Equal(RunnerTestHost.StartTime, Audit(scope, entity, "UpdatedAt"));
-            Assert.Equal(TimeSpan.Zero, Audit(scope, entity, "CreatedAt").Offset);
+            Assert.Equal(RunnerHost.StartTime, Context(scope).CreatedAt(entity));
+            Assert.Equal(RunnerHost.StartTime, Context(scope).UpdatedAt(entity));
+            Assert.Equal(TimeSpan.Zero, Context(scope).CreatedAt(entity).Offset);
         }
     }
 
     [RequiresDockerFact]
     public async Task Save_ChangedJob_MovesUpdatedTimeAndKeepsCreatedTime()
     {
-        await using var host = await RunnerTestHost.CreateAsync(postgres);
+        await using var host = await RunnerHost.CreateAsync(postgres);
         var job = TestJobs.WithTasks("a");
         await SaveNewAsync(host, job);
 
@@ -197,14 +195,14 @@ public class JobPersistenceTests(PostgreSqlFixture postgres)
 
         await using var check = host.NewScope();
         var reloaded = await LoadAsync(check, job.Id);
-        Assert.Equal(RunnerTestHost.StartTime, Audit(check, reloaded, "CreatedAt"));
-        Assert.Equal(RunnerTestHost.StartTime.AddMinutes(5), Audit(check, reloaded, "UpdatedAt"));
+        Assert.Equal(RunnerHost.StartTime, Context(check).CreatedAt(reloaded));
+        Assert.Equal(RunnerHost.StartTime.AddMinutes(5), Context(check).UpdatedAt(reloaded));
     }
 
     [RequiresDockerFact]
     public async Task Save_TimeWithAnOffset_IsStoredAndReadBackAsUtc()
     {
-        await using var host = await RunnerTestHost.CreateAsync(postgres);
+        await using var host = await RunnerHost.CreateAsync(postgres);
         var job = TestJobs.WithTasks("a");
         await SaveNewAsync(host, job);
         var deletedAt = new DateTimeOffset(2026, 11, 20, 14, 0, 0, TimeSpan.FromHours(2));

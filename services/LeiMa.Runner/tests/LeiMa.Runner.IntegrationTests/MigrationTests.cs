@@ -20,7 +20,7 @@ public class MigrationTests(PostgreSqlFixture postgres)
     private const string IndexQuery = "SELECT indexname || ' ' || indexdef FROM pg_indexes WHERE schemaname = 'public' ORDER BY 1";
 
     /// <summary>Checks that the history table lists every migration of the assembly exactly once, however many there are.</summary>
-    private static async Task AssertEveryMigrationRecordedOnceAsync(RunnerTestHost host)
+    private static async Task AssertEveryMigrationRecordedOnceAsync(PostgresTestHost host)
     {
         await using var scope = host.NewScope();
         var known = scope.ServiceProvider.GetRequiredService<RunnerDbContext>().Database.GetMigrations();
@@ -33,7 +33,7 @@ public class MigrationTests(PostgreSqlFixture postgres)
     [RequiresDockerFact]
     public async Task Migrate_EmptyDatabase_CreatesTheTablesAndRecordsTheMigrations()
     {
-        await using var host = await RunnerTestHost.CreateAsync(postgres, migrate: false);
+        await using var host = await RunnerHost.CreateAsync(postgres, migrate: false);
 
         await host.MigrateAsync();
 
@@ -45,7 +45,7 @@ public class MigrationTests(PostgreSqlFixture postgres)
     [RequiresDockerFact]
     public async Task Migrate_RunTwice_ChangesNothingTheSecondTime()
     {
-        await using var host = await RunnerTestHost.CreateAsync(postgres, migrate: false);
+        await using var host = await RunnerHost.CreateAsync(postgres, migrate: false);
         await host.MigrateAsync();
         var historyBefore = await host.QueryAsync(HistoryQuery);
         var schemaBefore = await host.QueryAsync(SchemaQuery);
@@ -63,7 +63,7 @@ public class MigrationTests(PostgreSqlFixture postgres)
     [RequiresDockerFact]
     public async Task Migrate_ThreeAtTheSameTime_AllSucceedAndApplyEachMigrationOnce()
     {
-        await using var host = await RunnerTestHost.CreateAsync(postgres, migrate: false);
+        await using var host = await RunnerHost.CreateAsync(postgres, migrate: false);
 
         await Task.WhenAll(host.MigrateAsync(), host.MigrateAsync(), host.MigrateAsync());
 
@@ -73,7 +73,7 @@ public class MigrationTests(PostgreSqlFixture postgres)
     [RequiresDockerFact]
     public async Task Model_AfterMigrating_HasNoChangesMissingFromTheMigrations()
     {
-        await using var host = await RunnerTestHost.CreateAsync(postgres);
+        await using var host = await RunnerHost.CreateAsync(postgres);
 
         await using var scope = host.NewScope();
 
@@ -85,7 +85,7 @@ public class MigrationTests(PostgreSqlFixture postgres)
     [RequiresDockerFact]
     public async Task Schema_JsonAndTimeColumns_HaveTheExpectedTypes()
     {
-        await using var host = await RunnerTestHost.CreateAsync(postgres);
+        await using var host = await RunnerHost.CreateAsync(postgres);
 
         var json = await host.QueryAsync(
             """SELECT column_name || ':' || data_type FROM information_schema.columns WHERE table_name = 'job_tasks' AND column_name IN ('Parameters', 'Output') ORDER BY 1""");
@@ -99,7 +99,7 @@ public class MigrationTests(PostgreSqlFixture postgres)
     [RequiresDockerFact]
     public async Task Schema_TwoTasksAtTheSamePositionOfOneJob_AreRejected()
     {
-        await using var host = await RunnerTestHost.CreateAsync(postgres);
+        await using var host = await RunnerHost.CreateAsync(postgres);
         var jobId = Guid.NewGuid();
         await host.ExecuteAsync(
             """INSERT INTO jobs ("Id", "Name", "Status", "CreatedAt", "UpdatedAt") VALUES (@id, 'Sync', 'Queued', now(), now())""",
