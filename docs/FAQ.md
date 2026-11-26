@@ -103,3 +103,32 @@ The next run creates and trusts the certificate again.
 **Cause:** the Aspire CLI starts the Debug build. A Release-only build is not found.
 
 **Fix:** build without `-c Release` (`dotnet build`), then run it again.
+
+## Runner database and migrations
+
+### The migrator logs two errors on its first run against an empty database
+**Symptom:** the first start of `LeiMa.Runner.Migrator` on a new, empty database logs two `Failed executing DbCommand` errors for `__EFMigrationsHistory`, and then reports success and exits with code 0.
+
+**Cause:** EF Core first looks for the migrations history table to see which migrations were applied. On a new database it does not exist yet, so PostgreSQL answers with an error, which EF logs and handles by creating the table. Nothing is wrong. The errors do not appear on later runs.
+
+**What to do:** nothing, as long as the migrator ends with exit code 0 and the Api starts. If it does not, read the first error that is *not* about `__EFMigrationsHistory`.
+
+### Can two migrators run at the same time?
+Yes. EF Core 9 and later take a lock in the database before applying migrations, so concurrent runs wait for each other and each migration is applied once. This is checked against PostgreSQL with Npgsql by `MigrationTests` (three migrations at once leave one history row per migration). It matters when several instances of the Api or the migrator start together in another environment.
+
+### `dotnet ef` fails with "The connection string 'runner' is not configured"
+**Cause:** the tool builds the startup project (`LeiMa.Runner.Migrator`) to find the `DbContext`, and the Runner reads its connection string `runner` from configuration, which is not set when you run the tool by hand. The AppHost normally provides it.
+
+**Fix:** set a placeholder; the tool does not connect for `migrations add` or `migrations list --no-connect`:
+```bash
+ConnectionStrings__runner="Host=localhost;Database=design_time_only" dotnet ef migrations list --no-connect \
+  --project services/LeiMa.Runner/src/LeiMa.Runner.Infrastructure \
+  --startup-project services/LeiMa.Runner/src/LeiMa.Runner.Migrator
+```
+In PowerShell, set the variable first: `$env:ConnectionStrings__runner = "Host=localhost;Database=design_time_only"`. The tool version is pinned in `dotnet-tools.json` (run `dotnet tool restore`).
+
+### The integration tests are skipped on my machine
+**Cause:** they need Docker (Testcontainers starts PostgreSQL). Locally they are skipped when Docker is not running; on CI they fail instead, so they are never silently skipped. Start Docker Desktop and run `dotnet test services/LeiMa.Runner/LeiMa.Runner.slnx` again. If `docker` hangs, see the Docker Desktop entry under Local development.
+
+### Tasks come back in the wrong order after a database change
+`GetAsync` orders the tasks by `Position` in the query. Without it, EF orders only by the job id and PostgreSQL happens to return the tasks in position order because of the unique `(JobId, Position)` index, which is not guaranteed. A test drops that index and reverses the stored positions to prove the explicit ordering works. Keep the `OrderBy` when changing the query.
