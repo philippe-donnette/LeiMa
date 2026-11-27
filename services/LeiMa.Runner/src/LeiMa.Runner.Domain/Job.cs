@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LeiMa.Common;
+using LeiMa.Runner.Domain.Placeholders;
 
 namespace LeiMa.Runner.Domain;
 
@@ -14,6 +15,12 @@ public sealed class Job
 
     /// <summary>The longest allowed task type.</summary>
     public const int TaskTypeMaxLength = 100;
+
+    /// <summary>The largest allowed number of tasks in one job.</summary>
+    public const int MaxTasks = 100;
+
+    /// <summary>The error code for a placeholder that refers to a task that does not run before the task that uses it.</summary>
+    public const string PlaceholderReferenceInvalidCode = "task.placeholder_reference_invalid";
 
     /// <summary>The tasks of the job, in position order; the ORM maps this field.</summary>
     private readonly List<JobTask> _tasks = [];
@@ -70,6 +77,11 @@ public sealed class Job
             return Error.Validation("job.tasks_required", "A job needs at least one task.");
         }
 
+        if (tasks.Count > MaxTasks)
+        {
+            return Error.Validation("job.too_many_tasks", $"A job can have at most {MaxTasks} tasks.");
+        }
+
         var job = new Job
         {
             Id = Ids.NewId(),
@@ -120,6 +132,72 @@ public sealed class Job
             return Error.Validation("task.timeout_invalid", $"Task {position}: the timeout must be greater than zero.");
         }
 
+        var placeholderError = FindPlaceholderError(position, definition.Parameters);
+        if (placeholderError is not null)
+        {
+            return placeholderError;
+        }
+
         return new JobTask(position, taskType, definition.Parameters.Clone(), definition.Timeout);
+    }
+
+    /// <summary>Looks through every string value of the parameters for a placeholder that is wrong (ADR 0004).</summary>
+    /// <param name="position">The 1-based position of the task the parameters belong to.</param>
+    /// <param name="value">The JSON value to check, including everything nested in it.</param>
+    /// <returns>The first error found, or <see langword="null"/> if all placeholders are valid.</returns>
+    private static Error? FindPlaceholderError(int position, JsonElement value)
+    {
+        switch (value.ValueKind)
+        {
+            case JsonValueKind.String:
+                return CheckPlaceholders(position, value.GetString() ?? string.Empty);
+            case JsonValueKind.Object:
+                foreach (var property in value.EnumerateObject())
+                {
+                    if (FindPlaceholderError(position, property.Value) is { } error)
+                    {
+                        return error;
+                    }
+                }
+
+                return null;
+            case JsonValueKind.Array:
+                foreach (var item in value.EnumerateArray())
+                {
+                    if (FindPlaceholderError(position, item) is { } error)
+                    {
+                        return error;
+                    }
+                }
+
+                return null;
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>Checks the placeholders of one string: well formed, and only referring to earlier tasks.</summary>
+    /// <param name="position">The 1-based position of the task the string belongs to.</param>
+    /// <param name="text">The string value.</param>
+    /// <returns>The error, or <see langword="null"/> if the string is valid.</returns>
+    private static Error? CheckPlaceholders(int position, string text)
+    {
+        var parsed = PlaceholderParser.Parse(text);
+        if (parsed.IsFailure)
+        {
+            return Error.Validation(parsed.Error.Code, $"Task {position}: {parsed.Error.Message}");
+        }
+
+        foreach (var part in parsed.Value)
+        {
+            if (part is ReferencePart reference && reference.TaskPosition >= position)
+            {
+                return Error.Validation(
+                    PlaceholderReferenceInvalidCode,
+                    $"Task {position}: a placeholder refers to task {reference.TaskPosition}, but a task can only use the output of an earlier task.");
+            }
+        }
+
+        return null;
     }
 }

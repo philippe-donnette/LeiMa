@@ -147,4 +147,93 @@ public class JobCreationTests
         AssertInvalid(result, "task.type_required");
         Assert.Contains("Task 2", result.Error.Message);
     }
+
+    [Fact]
+    public void Create_PlaceholderToAnEarlierTask_IsAcceptedAndStoredUnchanged()
+    {
+        const string parameters = """{"customerId":"{{tasks.1.output.items[0].id}}","note":"of {{tasks.1.output.total}}","nested":{"list":["{{tasks.2.output.x}}"]}}""";
+
+        var result = Job.Create("Sync", null, [ValidTask(), ValidTask(), new TaskDefinition("provider.sync", Json(parameters))]);
+
+        Assert.True(result.IsSuccess, result.IsFailure ? result.Error.Message : null);
+        Assert.True(JsonElement.DeepEquals(Json(parameters), result.Value.Tasks[2].Parameters));
+    }
+
+    [Fact]
+    public void Create_PlaceholderToALaterTask_IsRefusedNamingTheTask()
+    {
+        var result = Job.Create("Sync", null, [new TaskDefinition("a", Json("""{"id":"{{tasks.2.output.id}}"}""")), ValidTask()]);
+
+        AssertInvalid(result, Job.PlaceholderReferenceInvalidCode);
+        Assert.Contains("Task 1", result.Error.Message);
+        Assert.Contains("task 2", result.Error.Message);
+    }
+
+    [Fact]
+    public void Create_PlaceholderToItsOwnTask_IsRefused()
+    {
+        var result = Job.Create("Sync", null, [ValidTask(), new TaskDefinition("b", Json("""{"id":"{{tasks.2.output.id}}"}"""))]);
+
+        AssertInvalid(result, Job.PlaceholderReferenceInvalidCode);
+        Assert.Contains("Task 2", result.Error.Message);
+    }
+
+    [Fact]
+    public void Create_PlaceholderToAMissingTask_IsRefused()
+    {
+        var result = Job.Create("Sync", null, [ValidTask(), new TaskDefinition("b", Json("""{"id":"{{tasks.9.output.id}}"}"""))]);
+
+        AssertInvalid(result, Job.PlaceholderReferenceInvalidCode);
+    }
+
+    [Theory]
+    [InlineData("""{"a":{"b":["fine",{"c":"{{tasks.5.output.id}}"}]}}""")]
+    [InlineData("""{"list":["{{tasks.2.output.id}}"]}""")]
+    [InlineData("""{"text":"before {{tasks.3.output.id}} after"}""")]
+    public void Create_ForwardReferenceDeepInTheParameters_IsRefused(string parameters) =>
+        AssertInvalid(
+            Job.Create("Sync", null, [ValidTask(), new TaskDefinition("b", Json(parameters))]),
+            Job.PlaceholderReferenceInvalidCode);
+
+    [Theory]
+    [InlineData("""{"id":"{{tasks.1.output.id"}""")]
+    [InlineData("""{"id":"{{tasks.1.output}}"}""")]
+    [InlineData("""{"id":"{{ tasks.1.output.id }}"}""")]
+    [InlineData("""{"list":[{"id":"{{tasks.x.output.id}}"}]}""")]
+    public void Create_MalformedPlaceholder_IsRefusedNamingTheTask(string parameters)
+    {
+        var result = Job.Create("Sync", null, [ValidTask(), new TaskDefinition("b", Json(parameters))]);
+
+        AssertInvalid(result, "task.placeholder_invalid");
+        Assert.Contains("Task 2", result.Error.Message);
+    }
+
+    [Fact]
+    public void Create_EscapedBracesAndPropertyNames_AreNotPlaceholders()
+    {
+        const string parameters = """{"text":"write \\{{tasks.9.output.id}} as text","{{tasks.9.output.name}}":1,"number":5,"flag":true,"nothing":null}""";
+
+        var result = Job.Create("Sync", null, [new TaskDefinition("a", Json(parameters))]);
+
+        Assert.True(result.IsSuccess, result.IsFailure ? result.Error.Message : null);
+    }
+
+    [Fact]
+    public void Create_ExactlyTheMaximumNumberOfTasks_IsAccepted()
+    {
+        var tasks = Enumerable.Range(0, Job.MaxTasks).Select(_ => ValidTask()).ToList();
+
+        var result = Job.Create("Sync", null, tasks);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(Job.MaxTasks, result.Value.Tasks.Count);
+    }
+
+    [Fact]
+    public void Create_MoreThanTheMaximumNumberOfTasks_IsRefused()
+    {
+        var tasks = Enumerable.Range(0, Job.MaxTasks + 1).Select(_ => ValidTask()).ToList();
+
+        AssertInvalid(Job.Create("Sync", null, tasks), "job.too_many_tasks");
+    }
 }
